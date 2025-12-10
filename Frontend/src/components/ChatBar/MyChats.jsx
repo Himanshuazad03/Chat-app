@@ -46,7 +46,7 @@ function MyChats() {
 
   useEffect(() => {
     fetchChats();
-  }, [chats]);
+  }, []);
 
   return (
     <>
