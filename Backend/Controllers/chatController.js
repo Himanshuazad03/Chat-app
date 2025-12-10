@@ -1,5 +1,6 @@
 import User from "../Models/userModel.js";
 import Chat from "../Models/chatModel.js";
+import { io } from "../index.js";
 
 export const accessChat = async (req, res) => {
   try {
@@ -82,9 +83,15 @@ export const createGroup = async (req, res) => {
       groupAdmin: req.user,
     });
 
+    if (req.body.image) {
+      groupChat.image = req.body.image;
+    }
+
+
     const fullGroupChat = await Chat.findById(groupChat._id)
       .populate("users", "-password")
-      .populate("groupAdmin", "-password");
+      .populate("groupAdmin", "-password")
+      .populate("image");
 
     return res.status(200).json(fullGroupChat);
   } catch (error) {
@@ -110,6 +117,10 @@ export const renameGroup = async (req, res) => {
     if (!updatedChat) {
       return res.status(404).json({ message: "Chat not found" });
     }
+
+    updatedChat.users.forEach((u) => {
+      io.to(u._id.toString()).emit("groupUpdated", updatedChat);
+    });
 
     return res.status(200).json(updatedChat);
   } catch (error) {
@@ -140,7 +151,8 @@ export const LeaveGroup = async (req, res) => {
     await chat.save();
     const updated = await Chat.findById(chatId)
       .populate("users", "-password")
-      .populate("groupAdmin", "-password");
+      .populate("groupAdmin", "-password")
+      .populate("latestMessage");
 
     res.json(updated);
   } catch (error) {
@@ -165,11 +177,15 @@ export const addUser = async (req, res) => {
       }
     )
       .populate("users", "-password")
-      .populate("groupAdmin", "-password");
+      .populate("groupAdmin", "-password")
+      .populate("latestMessage");
 
     if (!added) {
       res.status(404).json({ message: "chat not found" });
     } else {
+      added.users.forEach((u) => {
+        io.to(u._id.toString()).emit("groupUpdated", added);
+      });
       res.json(added);
     }
   } catch (error) {
@@ -194,12 +210,20 @@ export const removeUser = async (req, res) => {
       }
     )
       .populate("users", "-password")
-      .populate("groupAdmin", "-password");
+      .populate("groupAdmin", "-password")
+      .populate("latestMessage");
 
     if (!removed) {
       res.status.json({ message: "Chat not found" });
-    } else{
-      res.status(201).json(removed)
+    } else {
+      removed.users.forEach((u) => {
+        io.to(u._id.toString()).emit("groupUpdated", removed);
+      });
+      io.to(userId.toString()).emit("removedFromGroup", {
+        chatId,
+        message: "You were removed from the group",
+      });
+      res.status(201).json(removed);
     }
   } catch (error) {
     return res.status(500).json({

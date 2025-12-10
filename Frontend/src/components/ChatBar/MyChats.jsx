@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import axios from "axios";
-import { Box, Button, Stack, Tooltip, Typography, Badge } from "@mui/material";
+import { Box, Button, Stack, Tooltip, Typography, Avatar } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import {
   setSelectedChat,
@@ -10,6 +10,7 @@ import {
   clearNotifications,
 } from "../../Store/chatSlice";
 import GroupChatModal from "../GroupChatModal/GroupChatModal";
+import { get } from "mongoose";
 
 function MyChats() {
   const { user } = useSelector((state) => state.auth);
@@ -19,7 +20,7 @@ function MyChats() {
   const dispatch = useDispatch();
 
   const getSender = (loggedUser, users) => {
-    return users[0]._id === loggedUser.id ? users[1].name : users[0].name;
+    return users[0]._id === loggedUser.id ? users[1] : users[0];
   };
 
   // Get unread count for a specific chat
@@ -79,7 +80,7 @@ function MyChats() {
                 variant="contained"
                 size="small"
                 sx={{
-                  backgroundColor: "#25D366",
+                  backgroundColor: "#3e6dcc",
                   textTransform: "none",
                   minWidth: "0",
                   width: "40px",
@@ -90,7 +91,7 @@ function MyChats() {
                   alignItems: "center",
                   justifyContent: "center",
                   fontWeight: 600,
-                  "&:hover": { backgroundColor: "#1ebe5c" },
+                  "&:hover": { backgroundColor: "#225bce" },
                   "&:marginRight": "none",
                 }}
               >
@@ -152,13 +153,12 @@ function MyChats() {
                   >
                     <Stack direction="row" spacing={2} alignItems="center">
                       {/* Avatar Placeholder */}
-                      <Box
+                      <Avatar
+                        src={chat?.isGroupChat ? chat?.image : getSender(user, chat.users)?.image}
                         sx={{
-                          width: 45,
-                          height: 45,
-                          bgcolor: "#d9dfdf",
-                          borderRadius: "50%",
-                          flexShrink: 0,
+                          width: 42,
+                          height: 42,
+                          border: "2px solid rgba(255,255,255,0.7)",
                         }}
                       />
 
@@ -179,18 +179,19 @@ function MyChats() {
                             }}
                           >
                             {!chat.isGroupChat
-                              ? getSender(user, chat.users)
+                              ? getSender(user, chat.users).name
                               : chat.chatName}
                           </Typography>
 
                           <Typography
                             fontSize="12px"
-                            color="#777"
+                            color={unreadCount > 0 ? "#25D366" : "#777"}
+                            fontWeight={unreadCount > 0 ? 460 : 300}
                             sx={{ whiteSpace: "nowrap", ml: 1 }}
                           >
                             {displayMessage
                               ? new Date(
-                                  displayMessage.createdAt
+                                  displayMessage?.createdAt
                                 ).toLocaleTimeString("en-GB", {
                                   hour: "2-digit",
                                   minute: "2-digit",
@@ -209,7 +210,7 @@ function MyChats() {
                           <Typography
                             fontSize="14px"
                             color={unreadCount > 0 ? "#000" : "#666"}
-                            fontWeight={unreadCount > 0 ? 600 : 400}
+                            fontWeight={unreadCount > 0 ? 460 : 300}
                             mt={0.5}
                             sx={{
                               whiteSpace: "nowrap",

@@ -2,14 +2,13 @@ import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 
-export default function ProtectedRoute({ children }) {
-  const navigate = useNavigate();
+export default function PublicRoute({ children }) {
   const { user } = useSelector((state) => state.auth);
-  console.log(user);
-  useEffect(()=>{
-    if (!user) {
-      navigate("/");
-    }else{
+  const navigate = useNavigate();
+
+  // If user is logged in → redirect to chat page
+  useEffect(() => {
+    if (user) {
       navigate("/chat");
     }
   }, [user]);

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import SnakeMessage from "../SnakeMessage/SnakeMessage";
+import { uploadToCloudinary } from "../utils/UploadToCloud";
 import {
   TextField,
   Button,
@@ -41,6 +42,7 @@ const SignupForm = () => {
   const [showPass, setShowPass] = useState(false);
   const [uploadImage, setUploadImage] = useState(false);
   const [showConfirmPass, setShowConfirmPass] = useState(false);
+
   const [snack, setSnack] = useState({
     open: false,
     message: "",
@@ -59,21 +61,9 @@ const SignupForm = () => {
 
     setUploadImage(true);
 
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", "chat-app");
-    formData.append("cloud_name", "dnn9xe0ee");
-
     try {
-      const res = await axios.post(
-        `https://api.cloudinary.com/v1_1/dnn9xe0ee/image/upload`,
-        formData,
-        {
-          withCredentials: false,
-        }
-      );
+      const url = await uploadToCloudinary(file);
 
-      const url = res.data.secure_url;
       console.log(url);
 
       // store url in hook form
@@ -81,6 +71,11 @@ const SignupForm = () => {
     } catch (err) {
       console.log("Cloudinary Upload Error:", err);
       setUploadImage(false);
+      setSnack({
+        open: true,
+        message: "Image Upload Failed. Try again!",
+        type: "error",
+      });
       return null;
     }
     setUploadImage(false);

@@ -6,6 +6,7 @@ import ProtectedRoute from "./components/Protected/Protected";
 import axios from "axios";
 import store from "./Store/store.js";
 import { logout } from "./Store/authSlice";
+import PublicRoute from "./components/Protected/Public.js";
 
 axios.interceptors.response.use(
   (res) => res,
@@ -22,8 +23,22 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/signup" element={<Signup />} />
+        <Route
+          path="/"
+          element={
+            <PublicRoute>
+              <Home />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/signup"
+          element={
+            <PublicRoute>
+              <Signup />
+            </PublicRoute>
+          }
+        />
         <Route
           path="/chat"
           element={

@@ -31,6 +31,8 @@ const io = new Server(server, {
   },
 });
 
+export { io };
+
 // 3️⃣ Socket.io events
 io.on("connection", (socket) => {
   // console.log("Socket connected:", socket.id);

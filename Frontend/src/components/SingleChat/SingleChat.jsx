@@ -183,6 +183,25 @@ function SingleChat() {
     }
   };
 
+  useEffect(() => {
+    socket.on("groupUpdated", (updatedChat) => {
+      dispatch(updateChat(updatedChat)); // replace chat in chat list
+    });
+
+    return () => socket.off("groupUpdated");
+  }, []);
+
+  useEffect(() => {
+    socket.on("removedFromGroup", ({ chatId }) => {
+      dispatch(removeChat(chatId)); // remove chat from chat list
+      if (selectedChat?._id === chatId) {
+        dispatch(setSelectedChat(null)); // close open chat
+      }
+    });
+
+    return () => socket.off("removedFromGroup");
+  }, [selectedChat]);
+
   const typingHandler = (e) => {
     setNewMessage(e.target.value);
     if (!typing) {

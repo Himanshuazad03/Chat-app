@@ -29,15 +29,26 @@ const chatSlice = createSlice({
     updateChat: (state, action) => {
       const updated = action.payload;
 
-      // update selectedChat
-      if (state.selectedChat?._id === updated._id) {
-        state.selectedChat = updated;
-      }
+      // Find existing chat
+      const existing = state.chats.find((c) => c._id === updated._id);
 
-      // update chats list
-      state.chats = state.chats.map((c) =>
-        c._id === updated._id ? updated : c
-      );
+      // Merge latestMessage safely
+      const mergedChat = {
+        ...existing,
+        ...updated,
+        latestMessage: updated.latestMessage ?? existing?.latestMessage,
+      };
+
+      // Remove old entry
+      state.chats = state.chats.filter((c) => c._id !== updated._id);
+
+      // Insert at top
+      state.chats.unshift(mergedChat);
+
+      // Update selectedChat safely
+      if (state.selectedChat?._id === updated._id) {
+        state.selectedChat = mergedChat;
+      }
     },
 
     removeChat: (state, action) => {

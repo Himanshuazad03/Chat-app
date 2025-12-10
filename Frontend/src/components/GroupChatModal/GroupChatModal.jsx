@@ -16,11 +16,14 @@ import UserListItems from "../Userlist/UserListItems";
 import SnakeMessage from "../SnakeMessage/SnakeMessage";
 import BadgeItems from "../BadgeItems/BadgeItems";
 import { addChat, setSelectedChat } from "../../Store/chatSlice";
-
+import { uploadToCloudinary } from "../utils/UploadToCloud";
 
 function GroupChatModal({ children }) {
   const [groupChatName, setGroupChatName] = useState("");
   const [selectedUsers, setSelectedUsers] = useState([]);
+  const [groupImage, setGroupImage] = useState(null);
+  const [uploadingImg, setUploadingImg] = useState(false);
+
   const [snack, setSnack] = useState({
     open: false,
     message: "",
@@ -40,7 +43,7 @@ function GroupChatModal({ children }) {
     () =>
       debounce(async (value, controller) => {
         try {
-          setLoading(true)
+          setLoading(true);
           if (!value.trim()) {
             setLoading(false);
             return;
@@ -76,6 +79,29 @@ function GroupChatModal({ children }) {
     return () => controller.abort();
   }, [search]);
 
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return null;
+    setGroupImage(file);
+    setUploadingImg(true);
+    try {
+      const url = await uploadToCloudinary(file);
+      console.log(url);
+      setGroupImage(url);
+      setUploadingImg(false);
+    } catch (err) {
+      console.log("Cloudinary Upload Error:", err);
+      setGroupImage(null);
+      setSnack({
+        open: true,
+        message: "Image Upload Failed. Try again!",
+        type: "error",
+      });
+      setUploadingImg(false);
+      return null;
+    }
+  };
+
   const handelSubmit = async () => {
     if (!groupChatName || selectedUsers.length === 0) {
       setSnack({
@@ -97,6 +123,7 @@ function GroupChatModal({ children }) {
       const { data } = await axios.post("/api/chat/group/", {
         name: groupChatName,
         users: JSON.stringify(selectedUsers.map((u) => u._id)),
+        image: groupImage,
       });
       dispatch(addChat(data));
       setSnack({
@@ -164,6 +191,48 @@ function GroupChatModal({ children }) {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
+
+          <Box sx={{ mb: 2 }}>
+            <Typography fontSize={14} mb={0.5}>
+              Group Image (optional)
+            </Typography>
+
+            <Button
+              variant="outlined"
+              component="label"
+              fullWidth
+              sx={{
+                textTransform: "none",
+                borderStyle: "dashed",
+                padding: "10px",
+              }}
+            >
+              Upload Image
+              <input
+                type="file"
+                hidden
+                accept="image/*"
+                onChange={handleImageUpload}
+              />
+            </Button>
+
+            {/* Preview */}
+            {groupImage && (
+              <Box mt={1} display="flex" justifyContent="center">
+                <img
+                  src={groupImage}
+                  alt="Group Preview"
+                  style={{ width: 80, height: 80, borderRadius: "50%" }}
+                />
+              </Box>
+            )}
+
+            {uploadingImg && (
+              <Box display="flex" justifyContent="center" mt={1}>
+                <CircularProgress size={28} />
+              </Box>
+            )}
+          </Box>
           {/* {add selectedUsers} */}
           <Box display="flex" flexWrap="wrap" gap={1} mb={1}>
             {selectedUsers.map((user) => (

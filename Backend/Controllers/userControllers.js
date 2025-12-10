@@ -56,8 +56,12 @@ export const registerUser = async (req, res) => {
       name,
       email,
       password: hashed,
-      image,
     });
+
+    if (image) {
+      createdUser.image = image;
+      await createdUser.save();
+    }
 
     res.status(201).json({
       message: "Signup successful",
