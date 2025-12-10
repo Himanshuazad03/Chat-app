@@ -16,111 +16,147 @@ import ProfileModal from "../ProfileModel/Profile";
 import SideDrawer from "../Drawer/Drawer";
 import { logout } from "../../Store/authSlice.js";
 import { useDispatch } from "react-redux";
+import ForumIcon from "@mui/icons-material/Forum";
 
 function Header() {
-  const [anchorEl, setAnchorEl] = useState(null);
-  const [profileOpen, setProfileOpen] = useState(false);
   const [openDrawer, setOpenDrawer] = useState(false);
-  const dispatch = useDispatch();
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [anchorEl, setAnchorEl] = useState(null);
 
-  const open = Boolean(anchorEl);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth);
 
-  const navigate = useNavigate();
+  const open = Boolean(anchorEl);
 
-  // open avatar menu
-  const handleMenuOpen = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
+  // Avatar menu open
+  const handleMenuOpen = (e) => setAnchorEl(e.currentTarget);
+  const handleMenuClose = () => setAnchorEl(null);
 
-  // close avatar menu
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-  };
-
-  // open profile modal
+  // Profile click
   const handleProfileClick = () => {
-    setProfileOpen(true);  // open modal
-    handleMenuClose();     // close menu
+    setProfileOpen(true);
+    handleMenuClose();
   };
 
-  // logout
+  // Logout
   const handleLogout = async () => {
     handleMenuClose();
     dispatch(logout());
     await axios.get("/api/user/logout", { withCredentials: true });
-
     navigate("/");
   };
 
   return (
     <>
+      {/* Slim Sidebar */}
       <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        bgcolor="white"
-        width="100%"
-        padding="8px 14px"
-        border="1.5px solid #e5e7eb"
-        boxShadow="0 1px 3px rgba(0,0,0,0.08)"
+        sx={{
+          width: "70px",
+          height: "100vh",
+          bgcolor: "#2f4760",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-between",
+          py: 2,
+        }}
       >
-        {/* Search Button */}
-        <Tooltip title="Search Users">
-          <Button
-            variant="text"
-            sx={{
-              color: "black",
-              textTransform: "none",
-              padding: "6px 10px",
-              borderRadius: "8px",
-              "&:hover": {
-                backgroundColor: "#f3f4f6",
-              },
-              gap: "6px",
-            }}
-            onClick={() => setOpenDrawer(true)}
-          >
-            <SearchIcon fontSize="small" />
-            <span className="cursor-pointer text-base hidden md:inline">
-              Search
-            </span>
-          </Button>
-        </Tooltip>
-        <SideDrawer open={openDrawer} onClose={() => setOpenDrawer(false)} />
-
-        {/* Avatar */}
-        <Tooltip title="Account settings">
-          <IconButton onClick={handleMenuOpen} sx={{ p: 0 }}>
-            <Avatar
-              src={user?.image}
-              alt="User"
-              sx={{
-                width: 36,
-                height: 36,
-                cursor: "pointer",
-                border: "1px solid black",
-              }}
-            />
-          </IconButton>
-        </Tooltip>
-
-        {/* Menu */}
-        <Menu
-          anchorEl={anchorEl}
-          open={open}
-          onClose={handleMenuClose}
-          PaperProps={{
-            elevation: 2,
-            sx: { minWidth: 140 },
+        {/* TOP SECTION */}
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 3.1,
           }}
         >
-          <MenuItem onClick={handleProfileClick}>Profile</MenuItem>
-          <MenuItem onClick={handleLogout}>Logout</MenuItem>
-        </Menu>
+          {/* Search Button */}
+          <Tooltip title="Search Users">
+            <Box
+              display={"flex"}
+              justifyContent={"center"}
+              alignItems={"center"}
+            >
+              <IconButton
+                onClick={() => setOpenDrawer(true)}
+                sx={{
+                  borderRadius: "50%",
+                  padding: "10px",
+                  transition: "0.2s ease",
+                  "&:hover": {
+                    bgcolor: "rgba(255, 255, 255, 0.25)",
+                  },
+                }}
+              >
+                <SearchIcon sx={{ color: "white", width: 26, height: 26 }} />
+              </IconButton>
+            </Box>
+          </Tooltip>
+
+          {/* Chats Button (selected) */}
+          <Tooltip title="All Chats">
+            <Box
+              sx={{
+                bgcolor: "#d6d9db",
+                padding: "11.3px 4px",
+                width: "100%",
+                textAlign: "center",
+                cursor: "pointer",
+              }}
+            >
+              <ForumIcon sx={{ width: 34, height: 34, color: "#3d82f0" }} />
+              <p
+                className="text-[10px] text-gray-600 font-semibold mt-1"
+                style={{ userSelect: "none" }}
+              >
+                All Chats
+              </p>
+            </Box>
+          </Tooltip>
+        </Box>
+
+        {/* BOTTOM SECTION - Avatar */}
+        <Box>
+          <Tooltip title="Account">
+            <IconButton onClick={handleMenuOpen}>
+              <Avatar
+                src={user?.image}
+                sx={{
+                  width: 42,
+                  height: 42,
+                  border: "2px solid rgba(255,255,255,0.7)",
+                }}
+              />
+            </IconButton>
+          </Tooltip>
+        </Box>
       </Box>
 
-      {/* Profile Modal Lives OUTSIDE Menu */}
+      {/* Drawer Search */}
+      <SideDrawer open={openDrawer} onClose={() => setOpenDrawer(false)} />
+
+      {/* Avatar Menu */}
+      <Menu
+        anchorEl={anchorEl}
+        open={open}
+        onClose={handleMenuClose}
+        PaperProps={{
+          elevation: 3,
+          sx: { minWidth: 150 },
+        }}
+        anchorOrigin={{
+          vertical: "top",
+          horizontal: "center",
+        }}
+        transformOrigin={{
+          vertical: "bottom",
+          horizontal: "center",
+        }}
+      >
+        <MenuItem onClick={handleProfileClick}>Profile</MenuItem>
+        <MenuItem onClick={handleLogout}>Logout</MenuItem>
+      </Menu>
+
+      {/* Profile Modal */}
       <ProfileModal
         user={user}
         open={profileOpen}

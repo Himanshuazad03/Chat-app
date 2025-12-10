@@ -10,9 +10,11 @@ import {
 import BadgeItems from "../BadgeItems/BadgeItems";
 import { useSelector, useDispatch } from "react-redux";
 import SnakeMessage from "../SnakeMessage/SnakeMessage";
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import axios from "axios";
 import { updateChat } from "../../Store/chatSlice";
+import debounce from "../Debouncing/Debounce";
+import UserListItems from "../Userlist/UserListItems";
 
 function GroupProfileModal({ open, onClose, users }) {
   const { user } = useSelector((state) => state.auth);
@@ -24,8 +26,49 @@ function GroupProfileModal({ open, onClose, users }) {
   });
   const [updatedGroupName, setUpdatedGroupName] = useState("");
   const [userSearch, setUserSearch] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [searchResult, setSearchResult] = useState([]);
   const { selectedChat } = useSelector((state) => state.chat);
 
+  const handelSearch = useMemo(
+    () =>
+      debounce(async (value, controller) => {
+        try {
+          setLoading(true);
+          if (!value.trim()) {
+            setLoading(false);
+            return;
+          }
+          const { data } = await axios.get(`/api/user?search=${value}`, {
+            withCredentials: true,
+            signal: controller.signal,
+          });
+          setLoading(false);
+          setSearchResult(data.users);
+          console.log(data);
+        } catch (error) {
+          if (axios.isCancel(error)) {
+            console.log("Request canceled", error.message);
+          } else {
+            console.log(error.message);
+          }
+        }
+      }, 400),
+    []
+  );
+
+  useEffect(() => {
+    const controller = new AbortController();
+    if (!userSearch.trim()) {
+      setSearchResult([]);
+      controller.abort();
+      setLoading(false);
+      return;
+    }
+
+    handelSearch(userSearch, controller);
+    return () => controller.abort();
+  }, [userSearch]);
 
   const handelUpdateGroup = async (groupId) => {
     if (!updatedGroupName) {
@@ -60,27 +103,70 @@ function GroupProfileModal({ open, onClose, users }) {
       });
     }
   };
-  const RemoveUser = (userToRemove) => {
-    console.log("Remove user:", userToRemove);
+
+  const RemoveUser = async (user1) => {
+    if (user.id !== selectedChat.groupAdmin._id) {
+      setSnack({
+        open: true,
+        message: "Only Admin can remove User",
+        type: "error",
+      });
+      return;
+    }
+    console.log(user1);
+    try {
+      const { data } = await axios.put("/api/chat/removeUser", {
+        userId: user1._id,
+        chatId: selectedChat._id,
+      });
+      dispatch(updateChat(data));
+      setSnack({
+        open: true,
+        message: "User removed successfully",
+        type: "success",
+      });
+      console.log(data);
+    } catch (error) {
+      setSnack({
+        open: true,
+        message: "Failed to remove user",
+        type: "error",
+      });
+    }
   };
+
+  const handleAddUser = async (u) => {
+    if (selectedChat.users.find((u1) => u1._id === u._id)) {
+      setSnack({
+        open: true,
+        message: "User Already added",
+        type: "error",
+      });
+      return;
+    }
+    const { data } = await axios.put("/api/chat/addUser", {
+      userId: u._id,
+      chatId: selectedChat._id,
+    });
+    dispatch(updateChat(data));
+    console.log(data);
+  };
+
   return (
     <>
       <Modal open={open} onClose={onClose}>
-        <Box
-          className="
-          absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
-            w-[440px] bg-white border shadow-2xl p-6 rounded-xl"
-        >
-          <Stack spacing={3} alignItems="center">
-            <Typography variant="h4" textAlign="center">
+        <Box className=" w-full max-w-[300px] md:max-w-[460px] bg-white border shadow-2xl p-6 rounded-xl absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+          <Stack>
+            <Typography variant="h4" textAlign="center" mb={1}>
               Group Members
             </Typography>
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mb: 1 }}>
-              {users?.map((user) => (
+              {users?.map((u) => (
                 <BadgeItems
-                  key={user._id}
-                  user={user}
-                  handleFunction={() => RemoveUser(user)}
+                  key={u._id}
+                  user={u}
+                  isGroup={true}
+                  handleFunction={() => RemoveUser(u)}
                 />
               ))}
               <Box
@@ -92,33 +178,49 @@ function GroupProfileModal({ open, onClose, users }) {
                   mt: 1,
                 }}
               >
-                {user.id === selectedChat?.groupAdmin?._id && (
-                  <>
-                    <TextField
-                      label="Group Name"
-                      value={updatedGroupName}
-                      onChange={(e) => setUpdatedGroupName(e.target.value)}
-                      variant="outlined"
-                      size="small"
-                      fullWidth
-                    />
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      onClick={() => handelUpdateGroup(selectedChat._id)}
-                    >
-                      Update
-                    </Button>
-                  </>
-                )}
+                <>
+                  <TextField
+                    label="Group Name"
+                    value={updatedGroupName}
+                    onChange={(e) => setUpdatedGroupName(e.target.value)}
+                    variant="outlined"
+                    size="small"
+                    fullWidth
+                  />
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={() => handelUpdateGroup(selectedChat._id)}
+                  >
+                    Update
+                  </Button>
+                </>
               </Box>
-              <TextField
-                sx={{ mt: 1 }}
-                label="Add User"
-                variant="outlined"
-                size="small"
-                fullWidth
-              />
+              {user.id === selectedChat?.groupAdmin?._id && (
+              <>
+                <TextField
+                  sx={{ mt: 1 }}
+                  value={userSearch}
+                  onChange={(e) => setUserSearch(e.target.value)}
+                  label="Add User"
+                  variant="outlined"
+                  size="small"
+                  fullWidth
+                />
+              </>
+              )}
+            </Box>
+            <Box className="max-h-[200px] overflow-y-auto hide-scrollbar scroll-smooth">
+              {searchResult?.map((user) => (
+                <UserListItems
+                  overflowY="scroll"
+                  className="cursor-pointer"
+                  key={user._id}
+                  user={user}
+                  handleFunction={() => handleAddUser(user)}
+                  clearSearch={() => setUserSearch("")}
+                />
+              ))}
             </Box>
           </Stack>
         </Box>

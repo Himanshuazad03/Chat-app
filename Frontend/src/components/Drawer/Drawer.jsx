@@ -73,7 +73,7 @@ function SideDrawer({ open, onClose }) {
   return (
     <>
       <Drawer anchor="left" open={open} onClose={onClose}>
-        <Box width={300} p={3} gap={4}>
+        <Box width={340} p={3} gap={4}>
           {/* Header */}
           <Box
             display="flex"

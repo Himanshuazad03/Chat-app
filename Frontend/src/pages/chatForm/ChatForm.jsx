@@ -12,14 +12,12 @@ function ChatForm() {
   console.log(user)
   return (
     <div style={{ width: "100%", height: "100vh", background: "linear-gradient(to bottom right, #dbeafe, #bfdbfe, #93c5fd)" }}>
-      {user && <Header />}
       <Box
         display={"flex"}
-        justifyContent={"space-between"}
         width={"100%"}
-        height={"91.5vh"}
-        padding={"10px"}
-      >
+        height={"100vh"}
+        >
+        {user && <Header />}
         {user && <MyChats />}
         {user && <ChatBox />}
       </Box>

@@ -16,7 +16,7 @@ import UserListItems from "../Userlist/UserListItems";
 import SnakeMessage from "../SnakeMessage/SnakeMessage";
 import BadgeItems from "../BadgeItems/BadgeItems";
 import { addChat, setSelectedChat } from "../../Store/chatSlice";
-import { set } from "mongoose";
+
 
 function GroupChatModal({ children }) {
   const [groupChatName, setGroupChatName] = useState("");
@@ -40,6 +40,7 @@ function GroupChatModal({ children }) {
     () =>
       debounce(async (value, controller) => {
         try {
+          setLoading(true)
           if (!value.trim()) {
             setLoading(false);
             return;
@@ -195,6 +196,7 @@ function GroupChatModal({ children }) {
               key={user._id}
               user={user}
               handleFunction={() => handleUserSelect(user)}
+              clearSearch={() => setSearch("")}
             />
           ))}
         </Box>

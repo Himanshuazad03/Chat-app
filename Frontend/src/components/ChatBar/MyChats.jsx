@@ -1,19 +1,40 @@
 import React, { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import axios from "axios";
-import { Box, Button, Stack } from "@mui/material";
+import { Box, Button, Stack, Tooltip, Typography, Badge } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
-import { setSelectedChat, setChats } from "../../Store/chatSlice";
+import {
+  setSelectedChat,
+  setChats,
+  setNotification,
+  clearNotifications,
+} from "../../Store/chatSlice";
 import GroupChatModal from "../GroupChatModal/GroupChatModal";
 
 function MyChats() {
   const { user } = useSelector((state) => state.auth);
-  const { selectedChat, chats } = useSelector((state) => state.chat);
+  const { selectedChat, chats, notifications } = useSelector(
+    (state) => state.chat
+  );
   const dispatch = useDispatch();
 
   const getSender = (loggedUser, users) => {
     return users[0]._id === loggedUser.id ? users[1].name : users[0].name;
   };
+
+  // Get unread count for a specific chat
+  const getUnreadCount = (chatId) => {
+    return notifications.filter((n) => n.chat._id === chatId).length;
+  };
+
+  // Get latest notification for a chat
+  const getLatestNotification = (chatId) => {
+    const chatNotifications = notifications.filter(
+      (n) => n.chat._id === chatId
+    );
+    return chatNotifications.length > 0 ? chatNotifications[0] : null;
+  };
+
   const fetchChats = async () => {
     try {
       const response = await axios.get("/api/chat", { withCredentials: true });
@@ -25,86 +46,222 @@ function MyChats() {
 
   useEffect(() => {
     fetchChats();
-  }, []);
+  }, [chats]);
 
   return (
     <>
       <Box
         display={{ xs: selectedChat ? "none" : "flex", md: "flex" }}
-        flexDirection={"column"}
-        alignItems={"center"}
-        p={2}
-        bgcolor={"white"}
+        flexDirection="column"
+        bgcolor="#FFFFFF"
         width={{ xs: "100%", md: "31%" }}
-        borderRadius={"10px"}
-        borderWidth={"1px"}
-        mr={2}
+        height="100%"
+        borderRight="1px solid #e5e5e5"
+        sx={{ overflow: "hidden" }}
       >
+        {/* HEADER */}
         <Box
-          pb={3}
           px={2}
-          fontSize={{ xs: "22px", md: "30px" }}
-          display={"flex"}
-          fontFamily={"sans-serif"}
-          width={"100%"}
-          justifyContent={"space-between"}
-          alignItems={"center"}
+          py={2}
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+          bgcolor="#f7f9fc"
+          borderBottom="1px solid #ececec"
         >
-          My Chats
+          <Typography fontSize="22px" fontWeight={700}>
+            Chats
+          </Typography>
+
           <GroupChatModal>
-            <Button
-              display={"flex"}
-              variant="contained"
-              sx={{
-                fontSize: { xs: "15px", md: "10px" },
-                "& .MuiButton-startIcon": {
-                  mr: 0,
-                  ml: 0,
-                },
-              }}
-              startIcon={<AddIcon sx={{ mr: 0 }} />}
-            >
-              <span className="hidden lg:block">New Group Chat</span>
-            </Button>
+            <Tooltip title="New Group Chat">
+              <Button
+                variant="contained"
+                size="small"
+                sx={{
+                  backgroundColor: "#25D366",
+                  textTransform: "none",
+                  minWidth: "0",
+                  width: "40px",
+                  height: "40px",
+                  borderRadius: "50%",
+                  padding: "0",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontWeight: 600,
+                  "&:hover": { backgroundColor: "#1ebe5c" },
+                  "&:marginRight": "none",
+                }}
+              >
+                <AddIcon sx={{ fontSize: 26 }} />
+              </Button>
+            </Tooltip>
           </GroupChatModal>
         </Box>
+
+        {/* CHAT LIST */}
         <Box
-          display={"flex"}
-          flexDirection={"column"}
-          p={2}
-          bgcolor={"#F8F8F8"}
-          width={"100%"}
-          height={"100%"}
-          borderRadius={"10px"}
-          overflowY={"hidden"}
+          flex={1}
+          overflow="auto"
+          bgcolor="#F7F7F7"
+          padding={1.7}
+          sx={{
+            "&::-webkit-scrollbar": {
+              width: "3px",
+            },
+            "&::-webkit-scrollbar-track": {
+              background: "#f1f1f1",
+            },
+            "&::-webkit-scrollbar-thumb": {
+              background: "#888",
+              borderRadius: "16px",
+            },
+            "&::-webkit-scrollbar-thumb:hover": {
+              background: "#555",
+            },
+          }}
         >
-          {/* Chats will be loaded here */}
           {chats.length > 0 ? (
-            <Stack overflowY="scroll">
-              {chats.map((chat) => (
-                <Box
-                  key={chat._id}
-                  sx={{ cursor: "pointer" }}
-                  onClick={() => dispatch(setSelectedChat(chat))}
-                  bgcolor={
-                    selectedChat?._id === chat._id ? "#38B2AC" : "#E8E8E8"
-                  }
-                  color={selectedChat?._id === chat._id ? "white" : "black"}
-                  px={2}
-                  py={1.5}
-                  borderRadius="10px"
-                  mb={2}
-                >
-                  <span>
-                    {!chat.isGroupChat
-                      ? getSender(user, chat.users)
-                      : chat.chatName}
-                  </span>
-                </Box>
-              ))}
+            <Stack spacing={0.5}>
+              {chats.map((chat) => {
+                const isSelected = selectedChat?._id === chat._id;
+                const unreadCount = getUnreadCount(chat._id);
+                const latestNotification = getLatestNotification(chat._id);
+
+                // Determine what message to display
+                const displayMessage = latestNotification || chat.latestMessage;
+
+                return (
+                  <Box
+                    key={chat._id}
+                    onClick={() => {
+                      dispatch(setSelectedChat(chat));
+                      dispatch(clearNotifications(chat._id));
+                    }}
+                    sx={{
+                      cursor: "pointer",
+                      p: 1.65,
+                      borderRadius: "8px",
+                      backgroundColor: isSelected ? "#d6d7db" : "#F7F7F7",
+                      transition: "0.2s ease",
+                      "&:hover": {
+                        backgroundColor: isSelected ? "none" : "#eaeaec",
+                      },
+                    }}
+                  >
+                    <Stack direction="row" spacing={2} alignItems="center">
+                      {/* Avatar Placeholder */}
+                      <Box
+                        sx={{
+                          width: 45,
+                          height: 45,
+                          bgcolor: "#d9dfdf",
+                          borderRadius: "50%",
+                          flexShrink: 0,
+                        }}
+                      />
+
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        {/* Name + Time */}
+                        <Stack
+                          direction="row"
+                          justifyContent="space-between"
+                          alignItems="center"
+                        >
+                          <Typography
+                            fontWeight={unreadCount > 0 ? 700 : 600}
+                            fontSize="16px"
+                            sx={{
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {!chat.isGroupChat
+                              ? getSender(user, chat.users)
+                              : chat.chatName}
+                          </Typography>
+
+                          <Typography
+                            fontSize="12px"
+                            color="#777"
+                            sx={{ whiteSpace: "nowrap", ml: 1 }}
+                          >
+                            {displayMessage
+                              ? new Date(
+                                  displayMessage.createdAt
+                                ).toLocaleTimeString("en-GB", {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })
+                              : ""}
+                          </Typography>
+                        </Stack>
+
+                        {/* Last message preview + Unread badge */}
+                        <Stack
+                          direction="row"
+                          alignItems="center"
+                          justifyContent="space-between"
+                          spacing={1}
+                        >
+                          <Typography
+                            fontSize="14px"
+                            color={unreadCount > 0 ? "#000" : "#666"}
+                            fontWeight={unreadCount > 0 ? 600 : 400}
+                            mt={0.5}
+                            sx={{
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              flex: 1,
+                            }}
+                          >
+                            {chat.isGroupChat &&
+                              (displayMessage?.sender?.name
+                                ? displayMessage.sender.name + ": "
+                                : "")}
+                            {displayMessage
+                              ? displayMessage.content?.length > 60
+                                ? displayMessage.content?.substring(0, 60) +
+                                  "..."
+                                : displayMessage?.content
+                              : "Start the conversation..."}
+                          </Typography>
+
+                          {/* Unread Count Badge */}
+                          {unreadCount > 0 && (
+                            <Box
+                              sx={{
+                                minWidth: "22px",
+                                height: "22px",
+                                borderRadius: "50%",
+                                backgroundColor: "#25D366",
+                                color: "#fff",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: "12px",
+                                fontWeight: 700,
+                                px: unreadCount > 9 ? 0.7 : 0,
+                                flexShrink: 0,
+                              }}
+                            >
+                              {unreadCount > 99 ? "99+" : unreadCount}
+                            </Box>
+                          )}
+                        </Stack>
+                      </Box>
+                    </Stack>
+                  </Box>
+                );
+              })}
             </Stack>
           ) : (
-            <div>No chats found</div>
+            <Typography p={3} textAlign="center" color="gray">
+              No chats found
+            </Typography>
           )}
         </Box>
       </Box>

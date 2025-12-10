@@ -150,3 +150,61 @@ export const LeaveGroup = async (req, res) => {
     });
   }
 };
+
+export const addUser = async (req, res) => {
+  try {
+    const { userId, chatId } = req.body;
+
+    const added = await Chat.findByIdAndUpdate(
+      chatId,
+      {
+        $push: { users: userId },
+      },
+      {
+        new: true,
+      }
+    )
+      .populate("users", "-password")
+      .populate("groupAdmin", "-password");
+
+    if (!added) {
+      res.status(404).json({ message: "chat not found" });
+    } else {
+      res.json(added);
+    }
+  } catch (error) {
+    return res.status(500).json({
+      message: "Something went wrong",
+      error: error.message,
+    });
+  }
+};
+
+export const removeUser = async (req, res) => {
+  try {
+    const { userId, chatId } = req.body;
+
+    const removed = await Chat.findByIdAndUpdate(
+      chatId,
+      {
+        $pull: { users: userId },
+      },
+      {
+        new: true,
+      }
+    )
+      .populate("users", "-password")
+      .populate("groupAdmin", "-password");
+
+    if (!removed) {
+      res.status.json({ message: "Chat not found" });
+    } else{
+      res.status(201).json(removed)
+    }
+  } catch (error) {
+    return res.status(500).json({
+      message: "Something went wrong",
+      error: error.message,
+    });
+  }
+};
