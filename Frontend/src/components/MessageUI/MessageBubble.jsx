@@ -9,8 +9,6 @@ function MessageBubble({ msg, isOwn }) {
     minute: "2-digit",
   });
 
-  // Avatar should show for every "other" user (group or private)
-
   return (
     <Box
       display="flex"

@@ -153,7 +153,7 @@ function Header() {
         }}
       >
         <MenuItem onClick={handleProfileClick}>Profile</MenuItem>
-        <MenuItem onClick={handleLogout}>Logout</MenuItem>
+        <MenuItem onClick={handleLogout} sx={{color: "error.main"}}>Logout</MenuItem>
       </Menu>
 
       {/* Profile Modal */}

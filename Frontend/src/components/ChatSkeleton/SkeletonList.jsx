@@ -11,8 +11,6 @@ function SkeletonList() {
       <SkeletonMessage isOwn={true} />
       <SkeletonMessage isOwn={false} />
       <SkeletonMessage isOwn={true} />
-      <SkeletonMessage isOwn={false} />
-      <SkeletonMessage isOwn={true} />
     </Box>
   )
 }

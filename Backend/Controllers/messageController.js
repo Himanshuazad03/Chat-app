@@ -1,6 +1,7 @@
 import User from "../Models/userModel.js";
 import Chat from "../Models/chatModel.js";
 import Message from "../Models/messageModel.js";
+import {io} from "../index.js";
 
 export const sendMessage = async (req, res) => {
   const { content, chatId } = req.body;
@@ -54,3 +55,5 @@ export const allMessage = async (req, res) => {
     });
   }
 };
+
+

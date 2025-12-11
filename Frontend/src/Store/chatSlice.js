@@ -1,12 +1,14 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { set } from "mongoose";
+
+const savedNotifications =
+  JSON.parse(localStorage.getItem("notifications")) || [];
 
 const chatSlice = createSlice({
   name: "chat",
   initialState: {
     selectedChat: null,
     chats: [],
-    notifications: [],
+    notifications: savedNotifications,
   },
   reducers: {
     setSelectedChat: (state, action) => {
@@ -31,6 +33,8 @@ const chatSlice = createSlice({
 
       // Find existing chat
       const existing = state.chats.find((c) => c._id === updated._id);
+
+      if (!updated.users && existing) return;
 
       // Merge latestMessage safely
       const mergedChat = {
@@ -71,6 +75,10 @@ const chatSlice = createSlice({
       // if first notification for this chat, add it
       if (!exists) {
         state.notifications.unshift(newNotif);
+        localStorage.setItem(
+          "notifications",
+          JSON.stringify(state.notifications)
+        );
       } else {
         state.notifications.unshift(newNotif); // allow multiple notifications
       }
@@ -80,6 +88,10 @@ const chatSlice = createSlice({
       const chatId = action.payload;
       state.notifications = state.notifications.filter(
         (n) => n.chat?._id !== chatId
+      );
+      localStorage.setItem(
+        "notifications",
+        JSON.stringify(state.notifications)
       );
     },
   },

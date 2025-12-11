@@ -3,6 +3,7 @@ import { Box } from "@mui/material";
 import MessageBubble from "./MessageBubble";
 import MessageDate from "./MessageDate";
 import formatDate from "./formateDate.js";
+import SystemMessage from "./SystemMessage.jsx";
 
 function MessageList({ messages, currentUserId }) {
   const bottomRef = useRef(null);
@@ -24,7 +25,14 @@ function MessageList({ messages, currentUserId }) {
         return (
           <React.Fragment key={msg._id || index}>
             {showDate && <MessageDate date={msgDate} />}
-            <MessageBubble msg={msg} isOwn={msg.sender._id === currentUserId} />
+            {msg.isSystemMessage ? (
+              <SystemMessage msg={msg} />
+            ) : (
+              <MessageBubble
+                msg={msg}
+                isOwn={msg?.sender?._id === currentUserId}
+              />
+            )}
           </React.Fragment>
         );
       })}

@@ -20,12 +20,35 @@ function MyChats() {
   const dispatch = useDispatch();
 
   const getSender = (loggedUser, users) => {
-    return users[0]._id === loggedUser.id ? users[1] : users[0];
+    if (!Array.isArray(users) || users.length < 2) return null;
+
+    const loggedId = loggedUser.id ?? loggedUser._id;
+
+    return users.find((u) => u._id !== loggedId) || users[0];
   };
 
   // Get unread count for a specific chat
   const getUnreadCount = (chatId) => {
     return notifications.filter((n) => n.chat._id === chatId).length;
+  };
+
+  let lastSenderName = "";
+
+  const getDisplaySender = (msg) => {
+    // system messages never show sender
+    if (msg?.isSystemMessage) return "";
+
+    // sender missing → return last known sender
+    if (msg?.sender == undefined) return lastSenderName;
+
+    const isOwn = msg?.sender._id === user.id;
+    const name = isOwn ? "You: " : `${msg?.sender.name}: `;
+
+    // store for next fallback use
+    if(name == undefined) return lastSenderName;
+    lastSenderName = name;
+
+    return name;
   };
 
   // Get latest notification for a chat
@@ -154,7 +177,11 @@ function MyChats() {
                     <Stack direction="row" spacing={2} alignItems="center">
                       {/* Avatar Placeholder */}
                       <Avatar
-                        src={chat?.isGroupChat ? chat?.image : getSender(user, chat.users)?.image}
+                        src={
+                          chat?.isGroupChat
+                            ? chat?.image
+                            : getSender(user, chat.users)?.image
+                        }
                         sx={{
                           width: 42,
                           height: 42,
@@ -179,7 +206,7 @@ function MyChats() {
                             }}
                           >
                             {!chat.isGroupChat
-                              ? getSender(user, chat.users).name
+                              ? getSender(user, chat.users)?.name
                               : chat.chatName}
                           </Typography>
 
@@ -220,9 +247,12 @@ function MyChats() {
                             }}
                           >
                             {chat.isGroupChat &&
-                              (displayMessage?.sender?.name
-                                ? displayMessage.sender.name + ": "
-                                : "")}
+                            getDisplaySender(displayMessage) == undefined
+                              ? lastSenderName
+                              : getDisplaySender(displayMessage)}
+
+                            {console.log(getDisplaySender(displayMessage))}
+
                             {displayMessage
                               ? displayMessage.content?.length > 60
                                 ? displayMessage.content?.substring(0, 60) +

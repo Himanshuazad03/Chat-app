@@ -1,6 +1,8 @@
 import User from "../Models/userModel.js";
 import Chat from "../Models/chatModel.js";
+import Message from "../Models/messageModel.js";
 import { io } from "../index.js";
+import { sendSystemMessage } from "../utils/sendSystemMessage.js";
 
 export const accessChat = async (req, res) => {
   try {
@@ -87,7 +89,6 @@ export const createGroup = async (req, res) => {
       groupChat.image = req.body.image;
     }
 
-
     const fullGroupChat = await Chat.findById(groupChat._id)
       .populate("users", "-password")
       .populate("groupAdmin", "-password")
@@ -118,6 +119,13 @@ export const renameGroup = async (req, res) => {
       return res.status(404).json({ message: "Chat not found" });
     }
 
+    await sendSystemMessage(
+      chatId,
+      `${req.user.name} changed group name to ${chatName}`,
+      req.user._id
+    );
+
+
     updatedChat.users.forEach((u) => {
       io.to(u._id.toString()).emit("groupUpdated", updatedChat);
     });
@@ -133,6 +141,7 @@ export const renameGroup = async (req, res) => {
 
 export const LeaveGroup = async (req, res) => {
   try {
+    
     const { chatId } = req.body;
     const chat = await Chat.findById(chatId);
 
@@ -154,6 +163,13 @@ export const LeaveGroup = async (req, res) => {
       .populate("groupAdmin", "-password")
       .populate("latestMessage");
 
+    await sendSystemMessage(
+      chatId,
+      `${req.user.name} left the group`,
+      req.user._id
+    );
+
+    console.log(updated)
     res.json(updated);
   } catch (error) {
     return res.status(500).json({
@@ -183,6 +199,14 @@ export const addUser = async (req, res) => {
     if (!added) {
       res.status(404).json({ message: "chat not found" });
     } else {
+      const addedUser = added.users.find((u) => u._id.toString() === userId);
+      await sendSystemMessage(
+        chatId,
+        `${req.user.name} added ${addedUser.name}`,
+        req.user._id
+      );
+
+
       added.users.forEach((u) => {
         io.to(u._id.toString()).emit("groupUpdated", added);
       });
@@ -216,6 +240,14 @@ export const removeUser = async (req, res) => {
     if (!removed) {
       res.status.json({ message: "Chat not found" });
     } else {
+      const removedUser = await User.findById(userId);
+
+      await sendSystemMessage(
+        chatId,
+        `${req.user.name} removed ${removedUser.name}`,
+        req.user._id
+      );
+      
       removed.users.forEach((u) => {
         io.to(u._id.toString()).emit("groupUpdated", removed);
       });

@@ -46,7 +46,7 @@ function SingleChat() {
       preserveAspectRatio: "xMidYMid slice",
     },
   };
-  const { selectedChat, notifications } = useSelector((state) => state.chat);
+  const { selectedChat, notifications, chats } = useSelector((state) => state.chat);
   const { user } = useSelector((state) => state.auth);
   const [profileOpen, setProfileOpen] = useState(false);
   const [groupProfileOpen, setGroupProfileOpen] = useState(false);
@@ -71,6 +71,7 @@ function SingleChat() {
   }, []);
   const LeaveGroup = async (chatId) => {
     // Logic to leave the group chat
+    console.log(chatId);
     try {
       const { data } = await axios.put(
         "/api/chat/leave",
@@ -98,7 +99,11 @@ function SingleChat() {
   };
 
   const getSender = (loggedUser, users) => {
-    return users[0]._id === loggedUser.id ? users[1].name : users[0].name;
+    if (!Array.isArray(users) || users.length < 2) return null;
+
+    const loggedId = loggedUser.id ?? loggedUser._id;
+
+    return users.find((u) => u._id !== loggedId) || users[0];
   };
 
   const fetchMessages = async () => {
@@ -124,35 +129,34 @@ function SingleChat() {
   console.log(notifications);
 
   useEffect(() => {
-    const handler = (newMessageRecieved) => {
-      if (
-        !selectedChatCompare ||
-        selectedChatCompare._id !== newMessageRecieved.chat._id
-      ) {
-        // notification
-        dispatch(setNotification(newMessageRecieved));
-        dispatch(
-          updateChat({
-            ...newMessageRecieved.chat,
-            latestMessage: newMessageRecieved,
-          })
-        );
+    const handler = (msg) => {
+      const isSystem = msg.isSystemMessage;
+      const updatedChat = msg.chat;
+
+      const existingChat = chats.find((c) => c._id === updatedChat._id);
+
+      dispatch(
+        updateChat({
+          ...existingChat,
+          ...updatedChat,
+          latestMessage: isSystem ? existingChat?.latestMessage : msg,
+        })
+      );
+
+      // Notifications (only for real messages)
+      if (!selectedChatCompare || selectedChatCompare._id !== updatedChat._id) {
+        if (!isSystem) {
+          dispatch(setNotification(msg));
+        }
       } else {
-        setMessage((prev) => [...prev, newMessageRecieved]);
-        dispatch(
-          updateChat({
-            ...newMessageRecieved.chat,
-            latestMessage: newMessageRecieved,
-          })
-        );
+        // append to chat window
+        setMessage((prev) => [...prev, msg]);
       }
     };
 
     socket.on("messageRecieved", handler);
 
-    return () => {
-      socket.off("messageRecieved", handler);
-    };
+    return () => socket.off("messageRecieved", handler);
   }, [selectedChat]);
 
   const sendMessage = async () => {
@@ -200,7 +204,7 @@ function SingleChat() {
     });
 
     return () => socket.off("removedFromGroup");
-  }, [selectedChat]);
+  }, [selectedChat, chats]);
 
   const typingHandler = (e) => {
     setNewMessage(e.target.value);
@@ -238,23 +242,50 @@ function SingleChat() {
             alignItems={"center"}
             bgcolor={"lightgrey"}
           >
-            <IconButton
-              sx={{ display: { md: "none" } }}
-              onClick={() => {
-                dispatch(setSelectedChat(null));
-                // Dispatch action to deselect chat
-              }}
-            >
-              <ArrowBackIcon />
-            </IconButton>
-            <Typography
-              fontSize={{ xs: "24px", md: "30px" }}
-              fontFamily={"sans-serif"}
-            >
-              {!selectedChat.isGroupChat
-                ? getSender(user, selectedChat.users)
-                : selectedChat.chatName}
-            </Typography>
+            <Box display={"flex"} gap={1} alignItems={"center"}>
+              <IconButton
+                sx={{ display: { md: "none" } }}
+                onClick={() => {
+                  dispatch(setSelectedChat(null));
+                  // Dispatch action to deselect chat
+                }}
+              >
+                <ArrowBackIcon />
+              </IconButton>
+              <Avatar
+                src={
+                  selectedChat?.isGroupChat
+                    ? selectedChat?.image
+                    : getSender(user, selectedChat.users)?.image
+                }
+                sx={{
+                  width: 42,
+                  height: 42,
+                  border: "2px solid rgba(255,255,255,0.7)",
+                }}
+              />
+              <Box display={"flex"} flexDirection={"column"}>
+                <Typography
+                  fontSize={{ xs: "24px", md: "30px" }}
+                  fontFamily={"sans-serif"}
+                  display={"flex"}
+                >
+                  {!selectedChat?.isGroupChat
+                    ? getSender(user, selectedChat?.users)?.name
+                    : selectedChat?.chatName}
+                </Typography>
+                <Box display={"flex"} gap={0.5}>
+                  {selectedChat?.isGroupChat &&
+                    selectedChat?.users.map((u) => {
+                      return (
+                        <span className="text-xs text-gray-600" key={u._id}>
+                          {u._id !== user.id ? u.name : "You"},
+                        </span>
+                      );
+                    })}
+                </Box>
+              </Box>
+            </Box>
             <Box display={"flex"} gap={2}>
               <Button
                 onClick={() => {
