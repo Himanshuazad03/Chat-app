@@ -1,6 +1,8 @@
 import React from "react";
 import { Box, Typography, Avatar } from "@mui/material";
 import { useSelector } from "react-redux";
+import DoneIcon from "@mui/icons-material/Done";
+import DoneAllIcon from "@mui/icons-material/DoneAll";
 
 function MessageBubble({ msg, isOwn }) {
   const { selectedChat } = useSelector((state) => state.chat);
@@ -8,6 +10,7 @@ function MessageBubble({ msg, isOwn }) {
     hour: "2-digit",
     minute: "2-digit",
   });
+
 
   return (
     <Box
@@ -94,6 +97,24 @@ function MessageBubble({ msg, isOwn }) {
           >
             {time}
           </Typography>
+          {isOwn && (
+            <>
+              {/* sent */}
+              {msg.status === "sent" && (
+                <DoneIcon sx={{ fontSize: 16, color: "gray" }} />
+              )}
+
+              {/* delivered */}
+              {msg.status === "delivered" && (
+                <DoneAllIcon sx={{ fontSize: 17, color: "gray" }} />
+              )}
+
+              {/* seen */}
+              {msg.status === "seen" && (
+                <DoneAllIcon sx={{ fontSize: 17, color: "#4FC3F7" }} />
+              )}
+            </>
+          )}
         </Box>
       </Box>
     </Box>

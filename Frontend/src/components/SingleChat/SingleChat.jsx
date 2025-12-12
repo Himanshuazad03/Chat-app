@@ -46,7 +46,9 @@ function SingleChat() {
       preserveAspectRatio: "xMidYMid slice",
     },
   };
-  const { selectedChat, notifications, chats } = useSelector((state) => state.chat);
+  const { selectedChat, notifications, chats } = useSelector(
+    (state) => state.chat
+  );
   const { user } = useSelector((state) => state.auth);
   const [profileOpen, setProfileOpen] = useState(false);
   const [groupProfileOpen, setGroupProfileOpen] = useState(false);
@@ -171,7 +173,6 @@ function SingleChat() {
           },
           { withCredentials: true }
         );
-        console.log(data);
         socket.emit("newMessage", data);
         setMessage((prev) => [...(prev || []), data]);
         dispatch(
@@ -205,6 +206,32 @@ function SingleChat() {
 
     return () => socket.off("removedFromGroup");
   }, [selectedChat, chats]);
+
+  useEffect(() => {
+    if (selectedChat) {
+      socket.emit("chatOpened", {
+        chatId: selectedChat?._id,
+        userId: user?.id,
+      });
+    }
+  }, [selectedChat]);
+
+  useEffect(() => {
+    socket.on("messagesSeen", ({ chatId }) => {
+      setMessage((prev) =>
+        prev.map((msg) =>
+          msg.chat._id === chatId &&
+          msg.sender._id === user.id &&
+          msg.status !== "seen"
+            ? { ...msg, status: "seen" }
+            : msg
+        )
+      );
+    });
+
+    
+    return () => socket.off("messagesSeen");
+  }, []);
 
   const typingHandler = (e) => {
     setNewMessage(e.target.value);

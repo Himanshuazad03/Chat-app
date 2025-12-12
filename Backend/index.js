@@ -8,6 +8,7 @@ import messageRoute from "./routers/messageRoute.js";
 import cookieParser from "cookie-parser";
 import { Server } from "socket.io";
 import http from "http";
+import Message from "./Models/messageModel.js";
 
 const server = http.createServer(app);
 
@@ -55,11 +56,47 @@ io.on("connection", (socket) => {
     let chat = newMessageRecieved.chat;
     if (!chat.users) return console.log("chat.users not defined");
     chat.users.forEach((user) => {
-      if (user._id.toString() === newMessageRecieved.sender._id.toString()) return;
-      socket.in(user._id.toString()).emit("messageRecieved", newMessageRecieved);
+      if (user._id.toString() === newMessageRecieved.sender._id.toString())
+        return;
+      socket
+        .in(user._id.toString())
+        .emit("messageRecieved", newMessageRecieved);
     });
   });
 
+  socket.on("chatOpened", async ({ chatId, userId }) => {
+    // 1. Update all unseen messages that were NOT sent by this user
+    await Message.updateMany(
+      {
+        chat: chatId,
+        sender: { $ne: userId },
+        status: { $ne: "seen" },
+      },
+      { status: "seen" }
+    );
+
+
+
+    // 2. Get chat users
+    const chat = await Message.findOne({ chat: chatId })
+      .populate("chat")
+      .catch((err) => console.log(err));
+
+    if (!chat || !chat.chat) {
+      console.log("Chat not found for seen update");
+      return;
+    }
+
+    const users = chat.chat.users;
+
+    // 3. Notify all OTHER users (not the one opening the chat)
+    users.forEach((u) => {
+      if (u.toString() !== userId.toString()) {
+        socket.to(u.toString()).emit("messagesSeen", { chatId });
+      }
+    });
+  });
+  
   socket.off("setup", () => {
     console.log("USER DISCONNECTED");
     socket.leave(userData.id);

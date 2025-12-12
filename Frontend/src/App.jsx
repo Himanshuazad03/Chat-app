@@ -11,7 +11,7 @@ import PublicRoute from "./components/Protected/Public.js";
 axios.interceptors.response.use(
   (res) => res,
   (error) => {
-    if (error.response?.status === 401 || error.response?.status === 403) {
+    if (error.response?.status === 400 || error.response?.status === 403) {
       store.dispatch(logout());
       window.location.href = "/";
     }
