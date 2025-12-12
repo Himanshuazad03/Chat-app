@@ -14,7 +14,7 @@ export const uploadToCloudinary = async (file) => {
       formData,
       { withCredentials: false }
     );
-
+    console.log(res.data.secure_url);
     return res.data.secure_url; // 🔥 Final Cloudinary URL
   } catch (err) {
     console.log("Cloudinary Upload Error:", err);

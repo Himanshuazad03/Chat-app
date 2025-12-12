@@ -87,12 +87,12 @@ export const createGroup = async (req, res) => {
 
     if (req.body.image) {
       groupChat.image = req.body.image;
+      await groupChat.save();
     }
 
     const fullGroupChat = await Chat.findById(groupChat._id)
       .populate("users", "-password")
       .populate("groupAdmin", "-password")
-      .populate("image");
 
     return res.status(200).json(fullGroupChat);
   } catch (error) {
