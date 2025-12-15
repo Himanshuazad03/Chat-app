@@ -7,6 +7,7 @@ import {
   Typography,
   InputAdornment,
   Avatar,
+  CircularProgress,
 } from "@mui/material";
 import { useSelector, useDispatch } from "react-redux";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
@@ -28,8 +29,9 @@ import AttachFileIcon from "@mui/icons-material/AttachFile";
 import ImagePreviewModal from "../ImagePreviewModal/ImagePreviewModal";
 import api from "../../api/axios";
 import socket from "../../socket";
+import { set } from "mongoose";
 
-let selectedChatCompare
+let selectedChatCompare;
 
 function SingleChat() {
   const [snack, setSnack] = useState({
@@ -61,6 +63,8 @@ function SingleChat() {
   const [isTyping, setIsTyping] = useState(false);
   const [draftMedia, setDraftMedia] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
+  const [disable, setDisable] = useState(false);
+  const [sending, setSending] = useState(false);
   const dispatch = useDispatch();
 
   const fileInputRef = useRef();
@@ -110,6 +114,7 @@ function SingleChat() {
 
     try {
       // 4️⃣ Upload with progress
+      setDisable(true);
       const { data } = await api.post("/api/message/upload", formData, {
         onUploadProgress: (e) => {
           const percent = Math.round((e.loaded * 100) / e.total);
@@ -129,7 +134,7 @@ function SingleChat() {
       };
 
       setMessage((prev) => prev.map((m) => (m._id === tempId ? finalMsg : m)));
-
+      setDisable(false);
       // 6️⃣ Notify others & update chat list
       socket.emit("newMessage", finalMsg);
       dispatch(
@@ -141,6 +146,8 @@ function SingleChat() {
     } catch (error) {
       setMessage((prev) => prev.filter((m) => m._id !== tempId));
       console.error("Upload failed", error);
+    } finally {
+      setDisable(false);
     }
   };
 
@@ -173,11 +180,12 @@ function SingleChat() {
     // Logic to leave the group chat
 
     try {
+      setDisable(true);
       const { data } = await api.put("/api/chat/leave", { chatId });
 
       dispatch(removeChat(selectedChat._id));
       dispatch(setSelectedChat(null));
-
+      setDisable(false);
       setSnack({
         open: true,
         message: "You left the group",
@@ -189,6 +197,8 @@ function SingleChat() {
         message: "Failed to leave the group",
         type: "error",
       });
+    } finally {
+      setDisable(false);
     }
     dispatch(setSelectedChat(null));
   };
@@ -211,6 +221,8 @@ function SingleChat() {
       socket.emit("join chat", selectedChat._id);
     } catch (error) {
       console.error("Failed to fetch messages", error);
+    } finally {
+      setDisable(false);
     }
   };
 
@@ -254,6 +266,7 @@ function SingleChat() {
     if (newMessage) {
       socket.emit("stopTyping", selectedChat._id);
       try {
+        setSending(true);
         const { data } = await api.post("/api/message", {
           content: newMessage,
           chatId: selectedChat._id,
@@ -266,9 +279,12 @@ function SingleChat() {
             latestMessage: data,
           })
         );
+        setSending(false);
         setNewMessage("");
       } catch (error) {
         console.error("Failed to send message", error);
+      } finally {
+        setSending(false);
       }
     }
   };
@@ -429,6 +445,7 @@ function SingleChat() {
                 <Button
                   variant="contained"
                   color="error"
+                  disabled={disable}
                   onClick={() => LeaveGroup(selectedChat._id)}
                 >
                   Leave
@@ -532,6 +549,18 @@ function SingleChat() {
               </div>
             )}
 
+            {sending && (
+              <Box
+                display="flex"
+                justifyContent="flex-end"
+                alignItems="center"
+                px={2}
+                py={0.5}
+              >
+                <CircularProgress size={20} />
+              </Box>
+            )}
+
             <Box padding={"0 10px 10px 10px"}>
               <TextField
                 placeholder="Enter Message"
@@ -539,7 +568,7 @@ function SingleChat() {
                 value={newMessage}
                 onChange={typingHandler}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter") {
+                  if (e.key === "Enter" && !sending) {
                     if (draftMedia) {
                       handelMediaUpload();
                     } else {
@@ -572,7 +601,7 @@ function SingleChat() {
                       {/* Send Message */}
                       <IconButton
                         onClick={() => {
-                          if (draftMedia) {
+                          if (draftMedia && !sending) {
                             handelMediaUpload();
                           } else {
                             sendMessage();
