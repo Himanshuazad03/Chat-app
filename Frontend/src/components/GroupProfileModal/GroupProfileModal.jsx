@@ -114,7 +114,7 @@ function GroupProfileModal({ open, onClose, users }) {
     }
     
     try {
-      const { data } = await axios.put("/api/chat/removeUser", {
+      const { data } = await api.put("/api/chat/removeUser", {
         userId: user1._id,
         chatId: selectedChat._id,
       });
@@ -143,7 +143,7 @@ function GroupProfileModal({ open, onClose, users }) {
       });
       return;
     }
-    const { data } = await axios.put("/api/chat/addUser", {
+    const { data } = await api.put("/api/chat/addUser", {
       userId: u._id,
       chatId: selectedChat._id,
     });
