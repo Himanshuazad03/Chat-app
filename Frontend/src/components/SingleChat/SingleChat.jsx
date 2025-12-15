@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
   Button,
-  CircularProgress,
   IconButton,
   TextField,
   Typography,
@@ -17,20 +16,18 @@ import ProfileModal from "../ProfileModel/Profile";
 import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
 import GroupProfileModal from "../GroupProfileModal/GroupProfileModal";
 import SnakeMessage from "../SnakeMessage/SnakeMessage";
-import axios from "axios";
 import { removeChat, updateChat, setNotification } from "../../Store/chatSlice";
 import SkeletonList from "../ChatSkeleton/SkeletonList";
 import MessageList from "../MessageUI/MessageList";
 import SendIcon from "@mui/icons-material/Send";
-import io from "socket.io-client";
 import Lottie from "react-lottie";
 import animationData from "../Animations/typing.json";
 import MessageIcon from "@mui/icons-material/Message";
 import CloseIcon from "@mui/icons-material/Close";
 import AttachFileIcon from "@mui/icons-material/AttachFile";
 import ImagePreviewModal from "../ImagePreviewModal/ImagePreviewModal";
-
-const socket = io("http://localhost:4000");
+import api from "../../api/axios";
+import socket from "../../socket";
 
 let selectedChatCompare;
 
@@ -114,8 +111,7 @@ function SingleChat() {
 
     try {
       // 4️⃣ Upload with progress
-      const { data } = await axios.post("/api/message/upload", formData, {
-        withCredentials: true,
+      const { data } = await api.post("/api/message/upload", formData, {
         onUploadProgress: (e) => {
           const percent = Math.round((e.loaded * 100) / e.total);
           setMessage((prev) =>
@@ -151,24 +147,35 @@ function SingleChat() {
   };
 
   useEffect(() => {
+    if (!socket.connected) {
+      socket.connect();
+    }
+
     socket.emit("setup", user);
-    socket.on("connected", () => setSocketConnected(true));
-    socket.on("typing", ({ user }) => {
+
+    const onConnected = () => setSocketConnected(true);
+    const onTyping = ({ user }) => {
       setIsTyping(true);
       setTypingUser(user);
-    });
-    socket.on("stopTyping", () => setIsTyping(false));
-    return () => socket.off("connected");
-  }, []);
+    };
+    const onStopTyping = () => setIsTyping(false);
+
+    socket.on("connected", onConnected);
+    socket.on("typing", onTyping);
+    socket.on("stopTyping", onStopTyping);
+
+    return () => {
+      socket.off("connected", onConnected);
+      socket.off("typing", onTyping);
+      socket.off("stopTyping", onStopTyping);
+    };
+  }, [user]);
+
   const LeaveGroup = async (chatId) => {
     // Logic to leave the group chat
 
     try {
-      const { data } = await axios.put(
-        "/api/chat/leave",
-        { chatId },
-        { withCredentials: true }
-      );
+      const { data } = await api.put("/api/chat/leave", { chatId });
 
       dispatch(removeChat(selectedChat._id));
       dispatch(setSelectedChat(null));
@@ -200,9 +207,7 @@ function SingleChat() {
     if (!selectedChat) return;
     try {
       setLoading(true);
-      const { data } = await axios.get(`/api/message/${selectedChat._id}`, {
-        withCredentials: true,
-      });
+      const { data } = await api.get(`/api/message/${selectedChat._id}`);
       setMessage(data);
       setLoading(false);
       socket.emit("join chat", selectedChat._id);
@@ -251,14 +256,10 @@ function SingleChat() {
     if (newMessage) {
       socket.emit("stopTyping", selectedChat._id);
       try {
-        const { data } = await axios.post(
-          "/api/message",
-          {
-            content: newMessage,
-            chatId: selectedChat._id,
-          },
-          { withCredentials: true }
-        );
+        const { data } = await api.post("/api/message", {
+          content: newMessage,
+          chatId: selectedChat._id,
+        });
         socket.emit("newMessage", data);
         setMessage((prev) => [...(prev || []), data]);
         dispatch(

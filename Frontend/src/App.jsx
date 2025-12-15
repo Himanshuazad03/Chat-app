@@ -8,16 +8,7 @@ import store from "./Store/store.js";
 import { logout } from "./Store/authSlice";
 import PublicRoute from "./components/Protected/Public.js";
 
-axios.interceptors.response.use(
-  (res) => res,
-  (error) => {
-    if (error.response?.status === 400 || error.response?.status === 403) {
-      store.dispatch(logout());
-      window.location.href = "/";
-    }
-    return Promise.reject(error);
-  }
-);
+
 
 function App() {
   return (

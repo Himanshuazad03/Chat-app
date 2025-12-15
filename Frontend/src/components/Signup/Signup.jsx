@@ -21,6 +21,7 @@ import { Visibility, VisibilityOff } from "@mui/icons-material";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { Alert, Snackbar } from "@mui/material";
+import api from "../../api/axios";
 
 const SignupForm = () => {
   const {
@@ -82,7 +83,7 @@ const SignupForm = () => {
 
   const submitHandler = async (data) => {
     try {
-      const res = await axios.post("/api/user/register", data);
+      const res = await api.post("/api/user/register", data);
       setSnack({
         open: true,
         type: "success",

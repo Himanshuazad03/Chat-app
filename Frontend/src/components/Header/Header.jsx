@@ -19,6 +19,7 @@ import { useDispatch } from "react-redux";
 import ForumIcon from "@mui/icons-material/Forum";
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
+import api from "../../api/axios.js";
 
 function Header() {
   const [openDrawer, setOpenDrawer] = useState(false);
@@ -45,7 +46,7 @@ function Header() {
   const handleLogout = async () => {
     handleMenuClose();
     dispatch(logout());
-    await axios.get("/api/user/logout", { withCredentials: true });
+    await api.get("/api/user/logout");
     navigate("/");
   };
 

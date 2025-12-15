@@ -14,6 +14,7 @@ import UserListItems from "../Userlist/UserListItems";
 import { useSelector, useDispatch } from "react-redux";
 import { setSelectedChat, setChats, addChat } from "../../Store/chatSlice.js";
 import debounce from "../Debouncing/Debounce.js";
+import api from "../../api/axios.js";
 
 function SideDrawer({ open, onClose }) {
   const [searchTerm, setSearchTerm] = React.useState("");
@@ -28,8 +29,7 @@ function SideDrawer({ open, onClose }) {
     () =>
       debounce(async (value, controller) => {
         try {
-          const res = await axios.get(`/api/user?search=${value}`, {
-            withCredentials: true,
+          const res = await api.get(`/api/user?search=${value}`, {
             signal: controller.signal,
           });
           setAllUsers(res.data.users);

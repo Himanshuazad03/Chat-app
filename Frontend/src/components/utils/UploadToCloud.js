@@ -1,4 +1,5 @@
 import axios from "axios";
+import api from "../../api/axios";
 
 export const uploadToCloudinary = async (file) => {
   if (!file) return null;
@@ -9,7 +10,7 @@ export const uploadToCloudinary = async (file) => {
   formData.append("cloud_name", "dnn9xe0ee");
 
   try {
-    const res = await axios.post(
+    const res = await api.post(
       `https://api.cloudinary.com/v1_1/dnn9xe0ee/image/upload`,
       formData,
       { withCredentials: false }

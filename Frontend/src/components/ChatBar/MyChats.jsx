@@ -10,10 +10,11 @@ import {
   clearNotifications,
 } from "../../Store/chatSlice";
 import GroupChatModal from "../GroupChatModal/GroupChatModal";
-import { get } from "mongoose";
+import api from "../../api/axios";
 
 function MyChats() {
   const { user } = useSelector((state) => state.auth);
+  console.log(user)
   const { selectedChat, chats, notifications } = useSelector(
     (state) => state.chat
   );
@@ -51,7 +52,7 @@ function MyChats() {
 
   const fetchChats = async () => {
     try {
-      const response = await axios.get("/api/chat", { withCredentials: true });
+      const response = await api.get("/api/chat");
       dispatch(setChats(response.data.result));
     } catch (error) {
       console.error("Failed to load the chats", error);

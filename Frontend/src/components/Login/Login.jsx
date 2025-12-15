@@ -22,7 +22,8 @@ import {
 } from "@mui/material";
 import { useForm, Controller } from "react-hook-form";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
-axios.defaults.withCredentials = true;
+import api from "../../api/axios.js";
+
 const LoginForm = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -49,9 +50,7 @@ const LoginForm = () => {
 
   const submitHandler = async (data) => {
     try {
-      const res = await axios.post("/api/user/login", data, {
-        withCredentials: true,
-      });
+      const res = await api.post("/api/user/login", data);
       dispatch(login({ user: res.data.user, token: res.data.user.token }));
       setSnack({
         open: true,
