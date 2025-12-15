@@ -600,6 +600,7 @@ function SingleChat() {
 
                       {/* Send Message */}
                       <IconButton
+                      disabled = {sending}
                         onClick={() => {
                           if (draftMedia && !sending) {
                             handelMediaUpload();
