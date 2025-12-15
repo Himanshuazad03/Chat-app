@@ -17,6 +17,7 @@ import SnakeMessage from "../SnakeMessage/SnakeMessage";
 import BadgeItems from "../BadgeItems/BadgeItems";
 import { addChat, setSelectedChat } from "../../Store/chatSlice";
 import { uploadToCloudinary } from "../utils/UploadToCloud";
+import api from "../../api/axios";
 
 function GroupChatModal({ children }) {
   const [groupChatName, setGroupChatName] = useState("");
@@ -48,7 +49,7 @@ function GroupChatModal({ children }) {
             setLoading(false);
             return;
           }
-          const { data } = await axios.get(`/api/user?search=${value}`, {
+          const { data } = await api.get(`/api/user?search=${value}`, {
             withCredentials: true,
             signal: controller.signal,
           });
@@ -118,7 +119,7 @@ function GroupChatModal({ children }) {
       return;
     }
     try {
-      const { data } = await axios.post("/api/chat/group/", {
+      const { data } = await api.post("/api/chat/group/", {
         name: groupChatName,
         users: JSON.stringify(selectedUsers.map((u) => u._id)),
         image: groupImage,
@@ -237,7 +238,6 @@ function GroupChatModal({ children }) {
               <BadgeItems
                 key={user._id}
                 user={user}
-                setSearch={setSearch}
                 handleFunction={() => RemoveUser(user)}
               />
             ))}

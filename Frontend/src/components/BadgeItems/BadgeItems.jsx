@@ -17,9 +17,7 @@ function BadgeItems({ user, handleFunction, isGroup = false }) {
         <CloseIcon
           fontSize="small"
           className="ml-2 cursor-pointer"
-          onClick={() => {
-            handleFunction();
-          }}
+          onClick={handleFunction}
         />
       </div>
     </>

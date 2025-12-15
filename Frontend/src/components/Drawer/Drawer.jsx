@@ -102,6 +102,7 @@ function SideDrawer({ open, onClose }) {
                 user={user}
                 onClose={onClose}
                 handleFunction={() => accessChat(user._id)}
+                clearSearch={() => setSearchTerm("")}
               />
             ))}
           </Box>
