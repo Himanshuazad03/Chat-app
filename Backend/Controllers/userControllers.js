@@ -24,7 +24,6 @@ export const loginUser = async (req, res) => {
     const token = generateToken(user._id);
     const isProd = process.env.NODE_ENV === "production";
 
-
     const safeUser = {
       id: user._id,
       name: user.name,
@@ -96,14 +95,5 @@ export const allUser = async (req, res) => {
 };
 
 export const logoutUser = (req, res) => {
- const isProd = process.env.NODE_ENV === "production";
-
-  res.clearCookie("token", {
-    httpOnly: true,
-    secure: isProd,
-    sameSite: isProd ? "none" : "lax",
-    path: "/",
-  });
-
   res.status(200).json({ message: "Logout successful" });
 };
