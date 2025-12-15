@@ -34,7 +34,7 @@ const chatSlice = createSlice({
 
       // Find existing chat
       const existing = state.chats.find((c) => c._id === updated._id);
-      console.log(existing);
+     
 
       // Merge latestMessage safely
       const mergedChat = {
@@ -43,7 +43,7 @@ const chatSlice = createSlice({
         latestMessage: updated.latestMessage ?? existing?.latestMessage,
       };
 
-      console.log(mergedChat);
+      
 
       // Remove old entry
       state.chats = state.chats.filter((c) => c._id !== updated._id);

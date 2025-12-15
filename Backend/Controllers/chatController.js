@@ -117,7 +117,11 @@ export const renameGroup = async (req, res) => {
       { new: true }
     )
       .populate("users", "-password")
-      .populate("groupAdmin", "-password");
+      .populate("groupAdmin", "-password")
+      .populate({
+        path: "latestMessage",
+        populate: { path: "sender", select: "name image email" },
+      });
 
     if (!updatedChat) {
       return res.status(404).json({ message: "Chat not found" });
@@ -163,7 +167,10 @@ export const LeaveGroup = async (req, res) => {
     const updated = await Chat.findById(chatId)
       .populate("users", "-password")
       .populate("groupAdmin", "-password")
-      .populate("latestMessage");
+      .populate({
+        path: "latestMessage",
+        populate: { path: "sender", select: "name image email" },
+      });
 
     await sendSystemMessage(
       chatId,
@@ -196,7 +203,10 @@ export const addUser = async (req, res) => {
     )
       .populate("users", "-password")
       .populate("groupAdmin", "-password")
-      .populate("latestMessage");
+      .populate({
+        path: "latestMessage",
+        populate: { path: "sender", select: "name image email" },
+      });
 
     if (!added) {
       res.status(404).json({ message: "chat not found" });
@@ -236,7 +246,10 @@ export const removeUser = async (req, res) => {
     )
       .populate("users", "-password")
       .populate("groupAdmin", "-password")
-      .populate("latestMessage");
+      .populate({
+        path: "latestMessage",
+        populate: { path: "sender", select: "name image email" },
+      });
 
     if (!removed) {
       res.status.json({ message: "Chat not found" });

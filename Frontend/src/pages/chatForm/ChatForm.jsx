@@ -9,7 +9,6 @@ import ChatBox from "../../components/ChatBox/ChatBox";
 
 function ChatForm() {
   const { user } = useSelector((state) => state.auth);
-  console.log(user)
   return (
     <div style={{ width: "100%", height: "100vh", background: "linear-gradient(to bottom right, #dbeafe, #bfdbfe, #93c5fd)" }}>
       <Box

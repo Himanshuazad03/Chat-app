@@ -32,23 +32,13 @@ function MyChats() {
     return notifications.filter((n) => n.chat._id === chatId).length;
   };
 
-  let lastSenderName = "";
-
   const getDisplaySender = (msg) => {
-    // system messages never show sender
-    if (msg?.isSystemMessage) return "";
+    if (!msg || msg.isSystemMessage) return "";
 
-    // sender missing → return last known sender
-    if (msg?.sender == undefined) return lastSenderName;
+  if (!msg.sender || typeof msg.sender === "string") return "";
 
-    const isOwn = msg?.sender._id === user.id;
-    const name = isOwn ? "You: " : `${msg?.sender.name}: `;
-
-    // store for next fallback use
-    if (name == undefined) return lastSenderName;
-    lastSenderName = name;
-
-    return name;
+  const isOwn = msg?.sender._id === user?.id;
+  return isOwn ? "You: " : `${msg.sender.name}: `;
   };
 
   // Get latest notification for a chat
@@ -62,7 +52,6 @@ function MyChats() {
   const fetchChats = async () => {
     try {
       const response = await axios.get("/api/chat", { withCredentials: true });
-      console.log(response.data.result);
       dispatch(setChats(response.data.result));
     } catch (error) {
       console.error("Failed to load the chats", error);
@@ -247,6 +236,7 @@ function MyChats() {
                               flex: 1,
                             }}
                           >
+                            
                             {chat?.isGroupChat &&
                               getDisplaySender(displayMessage)}
 

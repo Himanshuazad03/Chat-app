@@ -214,7 +214,6 @@ function SingleChat() {
     selectedChatCompare = selectedChat;
   }, [selectedChat]);
 
-  console.log(notifications);
 
   useEffect(() => {
     const handler = (msg) => {
@@ -306,9 +305,9 @@ function SingleChat() {
     socket.on("messagesSeen", ({ chatId }) => {
       setMessage((prev) =>
         prev.map((msg) =>
-          msg.chat._id === chatId &&
-          msg.sender._id === user.id &&
-          msg.status !== "seen"
+          msg.chat?._id === chatId &&
+          msg.sender?._id === user?.id &&
+          msg?.status !== "seen"
             ? { ...msg, status: "seen" }
             : msg
         )

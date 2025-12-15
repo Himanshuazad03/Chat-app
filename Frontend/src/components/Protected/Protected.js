@@ -5,7 +5,6 @@ import { useEffect } from "react";
 export default function ProtectedRoute({ children }) {
   const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth);
-  console.log(user);
   useEffect(()=>{
     if (!user) {
       navigate("/");
