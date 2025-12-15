@@ -31,7 +31,7 @@ import socket from "../../socket";
 
 let selectedChatCompare;
 
-function SingleChat() {
+function SIngleChat() {
   const [snack, setSnack] = useState({
     open: false,
     message: "",
@@ -646,4 +646,4 @@ function SingleChat() {
   );
 }
 
-export default SingleChat;
+export default SIngleChat;
