@@ -1,7 +1,7 @@
 import { Box } from "@mui/material";
 import React from "react";
 import { useSelector } from "react-redux";
-import SingleChat from "../SingleChat/SIngleChat";
+import SingleChat from "../SingleChat/SingleChat";
 
 function ChatBox() {
   const { selectedChat } = useSelector((state) => state.chat);

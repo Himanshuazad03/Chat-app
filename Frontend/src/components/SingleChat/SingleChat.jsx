@@ -29,9 +29,9 @@ import ImagePreviewModal from "../ImagePreviewModal/ImagePreviewModal";
 import api from "../../api/axios";
 import socket from "../../socket";
 
-let selectedChatCompare;
+let selectedChatCompare
 
-function SIngleChat() {
+function SingleChat() {
   const [snack, setSnack] = useState({
     open: false,
     message: "",
@@ -82,7 +82,6 @@ function SIngleChat() {
 
     const tempId = Date.now();
 
-    // 1️⃣ Create temporary uploading message
     const tempMsg = {
       _id: tempId,
       sender: {
@@ -140,7 +139,6 @@ function SIngleChat() {
         })
       );
     } catch (error) {
-      // 7️⃣ Remove temp message on failure
       setMessage((prev) => prev.filter((m) => m._id !== tempId));
       console.error("Upload failed", error);
     }
@@ -646,4 +644,4 @@ function SIngleChat() {
   );
 }
 
-export default SIngleChat;
+export default SingleChat;
