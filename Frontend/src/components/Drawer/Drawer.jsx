@@ -58,7 +58,7 @@ function SideDrawer({ open, onClose }) {
   const accessChat = async (userId) => {
     try {
       setLoadingChat(true);
-      const { data } = await axios.post("/api/chat", { userId });
+      const { data } = await api.post("/api/chat", { userId });
       dispatch(addChat(data));
       dispatch(setSelectedChat(data));
       setLoadingChat(false);

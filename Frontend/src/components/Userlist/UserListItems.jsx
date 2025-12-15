@@ -25,8 +25,8 @@ function UserListItems({ user, handleFunction, clearSearch }) {
           },
         }}
         onClick={() => {
-          handleFunction(),
-          clearSearch()
+          handleFunction?.(),
+          clearSearch?.()
           
         }}
       >
