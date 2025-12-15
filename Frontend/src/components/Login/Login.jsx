@@ -173,8 +173,8 @@ const LoginForm = () => {
               fullWidth
               sx={{ py: 1.2, textTransform: "none", fontWeight: 500 }}
               onClick={async () => {
-                setValue("email", "guest@example.com");
-                setValue("password", "123456");
+                setValue("email", "guest@user.com");
+                setValue("password", "guest@123#");
                 await trigger(); // sync UI and validation
               }}
             >

@@ -9,8 +9,20 @@ import cookieParser from "cookie-parser";
 import { Server } from "socket.io";
 import http from "http";
 import Message from "./Models/messageModel.js";
+import cors from "cors";
 
 const server = http.createServer(app);
+
+if (process.env.NODE_ENV === "production") {
+  app.set("trust proxy", 1);
+}
+
+app.use(
+  cors({
+    origin: true,
+    credentials: true,
+  })
+);
 
 app.use(cookieParser());
 app.use(express.json());
@@ -27,7 +39,7 @@ const PORT = process.env.PORT;
 const io = new Server(server, {
   pingTimeout: 1200000,
   cors: {
-    origin: "http://localhost:5173",
+    origin: true,
     credentials: true,
   },
 });

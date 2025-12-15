@@ -1,6 +1,9 @@
 import User from "../Models/userModel.js";
 import bcrypt from "bcrypt";
 import generateToken from "../config/generateToken.js";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 export const loginUser = async (req, res) => {
   try {
@@ -19,11 +22,12 @@ export const loginUser = async (req, res) => {
     }
 
     const token = generateToken(user._id);
+    const isProd = process.env.NODE_ENV === "production";
 
     res.cookie("token", token, {
       httpOnly: true,
-      sameSite: "Lax",
-      secure: false,
+      secure: isProd, // REQUIRED on Render
+      sameSite: isProd ? "none" : "lax",
       path: "/",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });

@@ -94,6 +94,7 @@ function SideDrawer({ open, onClose }) {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
           {/* Search Results */}
+          {AllUsers.length > 0 ? (
           <Box mt={2}>
             {AllUsers.map((user) => (
               <UserListItems
@@ -104,6 +105,11 @@ function SideDrawer({ open, onClose }) {
               />
             ))}
           </Box>
+          ) : (
+            <Typography mt={2} color="textSecondary">
+              No users found.
+            </Typography>
+          )}
         </Box>
       </Drawer>
     </>
