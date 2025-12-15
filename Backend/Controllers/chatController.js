@@ -178,7 +178,6 @@ export const LeaveGroup = async (req, res) => {
       req.user._id
     );
 
-    console.log(updated);
     res.json(updated);
   } catch (error) {
     return res.status(500).json({

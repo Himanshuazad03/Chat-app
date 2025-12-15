@@ -48,7 +48,6 @@ export { io };
 
 // 3️⃣ Socket.io events
 io.on("connection", (socket) => {
-  // console.log("Socket connected:", socket.id);
 
   socket.on("setup", (userData) => {
     socket.join(userData.id);

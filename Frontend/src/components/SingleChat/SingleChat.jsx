@@ -28,6 +28,7 @@ import animationData from "../Animations/typing.json";
 import MessageIcon from "@mui/icons-material/Message";
 import CloseIcon from "@mui/icons-material/Close";
 import AttachFileIcon from "@mui/icons-material/AttachFile";
+import ImagePreviewModal from "../ImagePreviewModal/ImagePreviewModal";
 
 const socket = io("http://localhost:4000");
 
@@ -62,6 +63,7 @@ function SingleChat() {
   const [typingUser, setTypingUser] = useState(null);
   const [isTyping, setIsTyping] = useState(false);
   const [draftMedia, setDraftMedia] = useState(null);
+  const [previewImage, setPreviewImage] = useState(null);
   const dispatch = useDispatch();
 
   const fileInputRef = useRef();
@@ -213,7 +215,6 @@ function SingleChat() {
     fetchMessages();
     selectedChatCompare = selectedChat;
   }, [selectedChat]);
-
 
   useEffect(() => {
     const handler = (msg) => {
@@ -509,7 +510,7 @@ function SingleChat() {
                   messages={message}
                   currentUserId={user.id}
                   onMediaClick={(mediaUrl) => {
-                    window.open(mediaUrl, "_blank");
+                    setPreviewImage(mediaUrl);
                   }}
                 />
               )}
@@ -628,6 +629,11 @@ function SingleChat() {
         open={groupProfileOpen}
         onClose={() => setGroupProfileOpen(false)}
         users={selectedChat?.users}
+      />
+      <ImagePreviewModal
+        open={Boolean(previewImage)}
+        imageUrl={previewImage}
+        onClose={() => setPreviewImage(null)}
       />
       <SnakeMessage
         open={snack.open}
