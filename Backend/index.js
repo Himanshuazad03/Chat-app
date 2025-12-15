@@ -11,6 +11,7 @@ import http from "http";
 import Message from "./Models/messageModel.js";
 import cors from "cors";
 
+dotenv.config();
 const server = http.createServer(app);
 
 if (process.env.NODE_ENV === "production") {
@@ -19,7 +20,7 @@ if (process.env.NODE_ENV === "production") {
 
 app.use(
   cors({
-    origin: true,
+    origin: "https://chat-app-eight-beryl-59.vercel.app",
     credentials: true,
   })
 );
@@ -27,7 +28,7 @@ app.use(
 app.use(cookieParser());
 app.use(express.json());
 
-dotenv.config();
+
 connectDB();
 
 app.use("/api/user", userRoute);
@@ -39,7 +40,7 @@ const PORT = process.env.PORT;
 const io = new Server(server, {
   pingTimeout: 1200000,
   cors: {
-    origin: true,
+    origin: "https://chat-app-eight-beryl-59.vercel.app",
     credentials: true,
   },
 });
