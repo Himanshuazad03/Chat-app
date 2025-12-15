@@ -64,7 +64,6 @@ const SignupForm = () => {
     try {
       const url = await uploadToCloudinary(file);
 
-      console.log(url);
 
       // store url in hook form
       setValue("image", url, { shouldValidate: true }); // ✅ Cloudinary image URL
@@ -84,7 +83,6 @@ const SignupForm = () => {
   const submitHandler = async (data) => {
     try {
       const res = await axios.post("/api/user/register", data);
-      console.log(res);
       setSnack({
         open: true,
         type: "success",

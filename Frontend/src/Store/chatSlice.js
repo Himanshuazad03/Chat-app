@@ -9,6 +9,7 @@ const chatSlice = createSlice({
     selectedChat: null,
     chats: [],
     notifications: savedNotifications,
+    fileLoading: true,
   },
   reducers: {
     setSelectedChat: (state, action) => {
@@ -33,8 +34,7 @@ const chatSlice = createSlice({
 
       // Find existing chat
       const existing = state.chats.find((c) => c._id === updated._id);
-
-      if (!updated.users && existing) return;
+      console.log(existing);
 
       // Merge latestMessage safely
       const mergedChat = {
@@ -42,6 +42,8 @@ const chatSlice = createSlice({
         ...updated,
         latestMessage: updated.latestMessage ?? existing?.latestMessage,
       };
+
+      console.log(mergedChat);
 
       // Remove old entry
       state.chats = state.chats.filter((c) => c._id !== updated._id);
@@ -67,21 +69,12 @@ const chatSlice = createSlice({
     setNotification: (state, action) => {
       const newNotif = action.payload;
 
-      // find notifications for this chat
-      const exists = state.notifications.some(
-        (n) => n.chat?._id === newNotif.chat?._id
-      );
+      state.notifications.unshift(newNotif);
 
-      // if first notification for this chat, add it
-      if (!exists) {
-        state.notifications.unshift(newNotif);
-        localStorage.setItem(
-          "notifications",
-          JSON.stringify(state.notifications)
-        );
-      } else {
-        state.notifications.unshift(newNotif); // allow multiple notifications
-      }
+      localStorage.setItem(
+        "notifications",
+        JSON.stringify(state.notifications)
+      );
     },
 
     clearNotifications: (state, action) => {
@@ -94,6 +87,10 @@ const chatSlice = createSlice({
         JSON.stringify(state.notifications)
       );
     },
+
+    setFileLoading: (state, action) => {
+      state.fileLoading = action.payload ?? !state.fileLoading;
+    },
   },
 });
 export const {
@@ -104,5 +101,6 @@ export const {
   removeChat,
   setNotification,
   clearNotifications,
+  setFileLoading,
 } = chatSlice.actions;
 export default chatSlice.reducer;

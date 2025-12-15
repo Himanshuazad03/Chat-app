@@ -53,7 +53,6 @@ function GroupChatModal({ children }) {
             signal: controller.signal,
           });
           setLoading(false);
-          console.log(data);
           setSearchResults(data.users);
         } catch (error) {
           if (axios.isCancel(error)) {
@@ -86,7 +85,6 @@ function GroupChatModal({ children }) {
     setUploadingImg(true);
     try {
       const url = await uploadToCloudinary(file);
-      console.log(url);
       setGroupImage(url);
       setUploadingImg(false);
     } catch (err) {

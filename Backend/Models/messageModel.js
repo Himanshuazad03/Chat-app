@@ -11,6 +11,10 @@ const messageModel = mongoose.Schema(
       enum: ["sent", "delivered", "seen"],
       default: "sent",
     },
+    mediaUrl: { type: String, default: null },
+    publicId: { type: String, default: null },
+    isImage: { type: Boolean, default: false },
+    isVideo: { type: Boolean, default: false },
   },
   {
     timestamps: true,

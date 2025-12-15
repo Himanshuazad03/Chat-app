@@ -45,7 +45,7 @@ function GroupProfileModal({ open, onClose, users }) {
           });
           setLoading(false);
           setSearchResult(data.users);
-          console.log(data);
+          
         } catch (error) {
           if (axios.isCancel(error)) {
             console.log("Request canceled", error.message);
@@ -85,7 +85,6 @@ function GroupProfileModal({ open, onClose, users }) {
         chatId: groupId,
         chatName: updatedGroupName,
       });
-      console.log(data);
       dispatch(updateChat(data));
       setUpdatedGroupName("");
       onClose();
@@ -113,7 +112,7 @@ function GroupProfileModal({ open, onClose, users }) {
       });
       return;
     }
-    console.log(user1);
+    
     try {
       const { data } = await axios.put("/api/chat/removeUser", {
         userId: user1._id,
@@ -125,7 +124,7 @@ function GroupProfileModal({ open, onClose, users }) {
         message: "User removed successfully",
         type: "success",
       });
-      console.log(data);
+      
     } catch (error) {
       setSnack({
         open: true,
@@ -149,7 +148,7 @@ function GroupProfileModal({ open, onClose, users }) {
       chatId: selectedChat._id,
     });
     dispatch(updateChat(data));
-    console.log(data);
+    
   };
 
   return (

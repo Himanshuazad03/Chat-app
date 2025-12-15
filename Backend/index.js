@@ -54,7 +54,7 @@ io.on("connection", (socket) => {
 
   socket.on("newMessage", (newMessageRecieved) => {
     let chat = newMessageRecieved.chat;
-    if (!chat.users) return console.log("chat.users not defined");
+    if (!chat?.users) return console.log("chat.users not defined");
     chat.users.forEach((user) => {
       if (user._id.toString() === newMessageRecieved.sender._id.toString())
         return;
@@ -83,7 +83,6 @@ io.on("connection", (socket) => {
       .catch((err) => console.log(err));
 
     if (!chat || !chat.chat) {
-      console.log("Chat not found for seen update");
       return;
     }
 

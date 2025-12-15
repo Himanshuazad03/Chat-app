@@ -5,7 +5,7 @@ import MessageDate from "./MessageDate";
 import formatDate from "./formateDate.js";
 import SystemMessage from "./SystemMessage.jsx";
 
-function MessageList({ messages, currentUserId }) {
+function MessageList({ messages, currentUserId, onMediaClick }) {
   const bottomRef = useRef(null);
 
   // Auto-scroll every time messages change
@@ -31,6 +31,7 @@ function MessageList({ messages, currentUserId }) {
               <MessageBubble
                 msg={msg}
                 isOwn={msg?.sender?._id === currentUserId}
+                onMediaClick={onMediaClick}
               />
             )}
           </React.Fragment>

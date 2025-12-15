@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
   Button,
@@ -26,6 +26,8 @@ import io from "socket.io-client";
 import Lottie from "react-lottie";
 import animationData from "../Animations/typing.json";
 import MessageIcon from "@mui/icons-material/Message";
+import CloseIcon from "@mui/icons-material/Close";
+import AttachFileIcon from "@mui/icons-material/AttachFile";
 
 const socket = io("http://localhost:4000");
 
@@ -59,7 +61,92 @@ function SingleChat() {
   const [typing, setTyping] = useState(false);
   const [typingUser, setTypingUser] = useState(null);
   const [isTyping, setIsTyping] = useState(false);
+  const [draftMedia, setDraftMedia] = useState(null);
   const dispatch = useDispatch();
+
+  const fileInputRef = useRef();
+
+  const handelMediaSelect = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setDraftMedia({
+      file: file,
+      previewUrl: URL.createObjectURL(file),
+      isImage: file.type.startsWith("image"),
+      isVideo: file.type.startsWith("video"),
+    });
+    e.target.value = "";
+  };
+
+  const handelMediaUpload = async () => {
+    if (!draftMedia || !selectedChat) return;
+
+    const tempId = Date.now();
+
+    // 1️⃣ Create temporary uploading message
+    const tempMsg = {
+      _id: tempId,
+      sender: {
+        _id: user.id,
+        name: user.name,
+        image: user.image,
+      },
+      isImage: draftMedia.isImage,
+      isVideo: draftMedia.isVideo,
+      mediaUrl: draftMedia.previewUrl, // local preview
+      isUploading: true,
+      uploadProgress: 0,
+      chat: { _id: selectedChat._id },
+      createdAt: new Date().toISOString(),
+    };
+
+    // 2️⃣ Remove draft preview
+    setDraftMedia(null);
+
+    // 3️⃣ Insert temp message into chat
+    setMessage((prev) => [...prev, tempMsg]);
+
+    const formData = new FormData();
+    formData.append("media", draftMedia.file);
+    formData.append("chatId", selectedChat._id);
+
+    try {
+      // 4️⃣ Upload with progress
+      const { data } = await axios.post("/api/message/upload", formData, {
+        withCredentials: true,
+        onUploadProgress: (e) => {
+          const percent = Math.round((e.loaded * 100) / e.total);
+          setMessage((prev) =>
+            prev.map((m) =>
+              m._id === tempId ? { ...m, uploadProgress: percent } : m
+            )
+          );
+        },
+      });
+
+      // 5️⃣ Replace temp message with real server message
+      const finalMsg = {
+        ...data,
+        sender: tempMsg.sender,
+        isUploading: false,
+      };
+
+      setMessage((prev) => prev.map((m) => (m._id === tempId ? finalMsg : m)));
+
+      // 6️⃣ Notify others & update chat list
+      socket.emit("newMessage", finalMsg);
+      dispatch(
+        updateChat({
+          ...selectedChat,
+          latestMessage: finalMsg,
+        })
+      );
+    } catch (error) {
+      // 7️⃣ Remove temp message on failure
+      setMessage((prev) => prev.filter((m) => m._id !== tempId));
+      console.error("Upload failed", error);
+    }
+  };
 
   useEffect(() => {
     socket.emit("setup", user);
@@ -73,14 +160,13 @@ function SingleChat() {
   }, []);
   const LeaveGroup = async (chatId) => {
     // Logic to leave the group chat
-    console.log(chatId);
+
     try {
       const { data } = await axios.put(
         "/api/chat/leave",
         { chatId },
         { withCredentials: true }
       );
-      console.log(data);
 
       dispatch(removeChat(selectedChat._id));
       dispatch(setSelectedChat(null));
@@ -229,7 +315,6 @@ function SingleChat() {
       );
     });
 
-    
     return () => socket.off("messagesSeen");
   }, []);
 
@@ -383,10 +468,51 @@ function SingleChat() {
                 },
               }}
             >
+              {draftMedia && (
+                <Box
+                  sx={{
+                    p: 1,
+                    mb: 1,
+                    zIndex: 2,
+                    borderRadius: 2,
+                    bgcolor: "lightblue",
+                    position: "fixed",
+                    maxWidth: "300px",
+                    // height: "fit-content",
+                    // border: "2px solid #4caf50",
+                    ml: 1,
+                  }}
+                >
+                  {draftMedia.isImage && (
+                    <img
+                      src={draftMedia.previewUrl}
+                      style={{ width: "100%", height: "auto", borderRadius: 8 }}
+                    />
+                  )}
+
+                  {draftMedia.isVideo && (
+                    <video
+                      src={draftMedia.previewUrl}
+                      style={{ width: "100%", borderRadius: 8 }}
+                    />
+                  )}
+                  <IconButton sx={{ position: "absolute", top: 0, right: 0 }}>
+                    <CloseIcon onClick={() => setDraftMedia(null)} />
+                  </IconButton>
+
+                  {/* Progress bar (only while uploading) */}
+                </Box>
+              )}
               {loading ? (
                 <SkeletonList />
               ) : (
-                <MessageList messages={message} currentUserId={user.id} />
+                <MessageList
+                  messages={message}
+                  currentUserId={user.id}
+                  onMediaClick={(mediaUrl) => {
+                    window.open(mediaUrl, "_blank");
+                  }}
+                />
               )}
             </Box>
             {isTyping && typingUser.id !== user.id && (
@@ -406,6 +532,7 @@ function SingleChat() {
                 />
               </div>
             )}
+
             <Box padding={"0 10px 10px 10px"}>
               <TextField
                 placeholder="Enter Message"
@@ -413,13 +540,46 @@ function SingleChat() {
                 value={newMessage}
                 onChange={typingHandler}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter") sendMessage();
+                  if (e.key === "Enter") {
+                    if (draftMedia) {
+                      handelMediaUpload();
+                    } else {
+                      sendMessage();
+                    }
+                  }
                 }}
                 InputProps={{
                   disableUnderline: true,
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <IconButton onClick={() => fileInputRef.current.click()}>
+                        <AttachFileIcon />
+                      </IconButton>
+
+                      {/* Hidden File Input */}
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        accept="image/*,video/*"
+                        onChange={handelMediaSelect}
+                        style={{ display: "none" }}
+                      />
+                    </InputAdornment>
+                  ),
                   endAdornment: (
                     <InputAdornment position="end">
-                      <IconButton onClick={sendMessage}>
+                      {/* File Upload Icon */}
+
+                      {/* Send Message */}
+                      <IconButton
+                        onClick={() => {
+                          if (draftMedia) {
+                            handelMediaUpload();
+                          } else {
+                            sendMessage();
+                          }
+                        }}
+                      >
                         <SendIcon />
                       </IconButton>
                     </InputAdornment>

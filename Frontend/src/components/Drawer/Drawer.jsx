@@ -20,7 +20,7 @@ function SideDrawer({ open, onClose }) {
   const [AllUsers, setAllUsers] = React.useState([]);
   const [loadingChat, setLoadingChat] = React.useState(false);
   const { chats } = useSelector((state) => state.chat);
-  console.log("chats are", chats);
+
 
   const dispatch = useDispatch();
 
@@ -32,7 +32,6 @@ function SideDrawer({ open, onClose }) {
             withCredentials: true,
             signal: controller.signal,
           });
-          console.log(res.data.users);
           setAllUsers(res.data.users);
         } catch (error) {
           if (axios.isCancel(error)) {
@@ -64,7 +63,7 @@ function SideDrawer({ open, onClose }) {
       dispatch(setSelectedChat(data));
       setLoadingChat(false);
       onClose();
-      console.log("Chat accessed/created:", data._id);
+      
     } catch (error) {
       console.error("Error accessing/creating chat:", error);
     }

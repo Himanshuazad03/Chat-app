@@ -17,6 +17,8 @@ import SideDrawer from "../Drawer/Drawer";
 import { logout } from "../../Store/authSlice.js";
 import { useDispatch } from "react-redux";
 import ForumIcon from "@mui/icons-material/Forum";
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import LogoutIcon from '@mui/icons-material/Logout';
 
 function Header() {
   const [openDrawer, setOpenDrawer] = useState(false);
@@ -152,8 +154,14 @@ function Header() {
           horizontal: "center",
         }}
       >
-        <MenuItem onClick={handleProfileClick}>Profile</MenuItem>
-        <MenuItem onClick={handleLogout} sx={{color: "error.main"}}>Logout</MenuItem>
+        <MenuItem onClick={handleProfileClick}>
+          <AccountCircleIcon sx={{ mr: 1, color: "gray" }} />
+          Profile
+        </MenuItem>
+        <MenuItem onClick={handleLogout} sx={{ color: "error.main" }}>
+          <LogoutIcon sx={{ mr: 1, color: "error.main" }} />
+          Logout
+        </MenuItem>
       </Menu>
 
       {/* Profile Modal */}

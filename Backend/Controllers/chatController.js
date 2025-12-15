@@ -48,18 +48,22 @@ export const accessChat = async (req, res) => {
 
 export const fetchChat = async (req, res) => {
   try {
-    await Chat.find({ users: { $elemMatch: { $eq: req.user._id } } })
+    let chats = await Chat.find({
+      users: { $elemMatch: { $eq: req.user._id } },
+    })
       .populate("users", "-password")
       .populate("groupAdmin", "-password")
-      .populate("latestMessage")
-      .sort({ updatedAt: -1 })
-      .then(async (result) => {
-        result = await User.populate(result, {
-          path: "latestMessage.sender",
+      .populate({
+        path: "latestMessage",
+        select: "content mediaUrl isImage isVideo sender chat createdAt", // IMPORTANT
+        populate: {
+          path: "sender",
           select: "name image email",
-        });
-        return res.status(200).json({ result });
-      });
+        },
+      })
+      .sort({ updatedAt: -1 });
+
+    return res.status(200).json({ result: chats });
   } catch (error) {
     return res.status(500).json({
       message: "Something went wrong",
@@ -92,7 +96,7 @@ export const createGroup = async (req, res) => {
 
     const fullGroupChat = await Chat.findById(groupChat._id)
       .populate("users", "-password")
-      .populate("groupAdmin", "-password")
+      .populate("groupAdmin", "-password");
 
     return res.status(200).json(fullGroupChat);
   } catch (error) {
@@ -125,7 +129,6 @@ export const renameGroup = async (req, res) => {
       req.user._id
     );
 
-
     updatedChat.users.forEach((u) => {
       io.to(u._id.toString()).emit("groupUpdated", updatedChat);
     });
@@ -141,7 +144,6 @@ export const renameGroup = async (req, res) => {
 
 export const LeaveGroup = async (req, res) => {
   try {
-    
     const { chatId } = req.body;
     const chat = await Chat.findById(chatId);
 
@@ -169,7 +171,7 @@ export const LeaveGroup = async (req, res) => {
       req.user._id
     );
 
-    console.log(updated)
+    console.log(updated);
     res.json(updated);
   } catch (error) {
     return res.status(500).json({
@@ -205,7 +207,6 @@ export const addUser = async (req, res) => {
         `${req.user.name} added ${addedUser.name}`,
         req.user._id
       );
-
 
       added.users.forEach((u) => {
         io.to(u._id.toString()).emit("groupUpdated", added);
@@ -247,7 +248,7 @@ export const removeUser = async (req, res) => {
         `${req.user.name} removed ${removedUser.name}`,
         req.user._id
       );
-      
+
       removed.users.forEach((u) => {
         io.to(u._id.toString()).emit("groupUpdated", removed);
       });

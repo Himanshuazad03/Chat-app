@@ -45,7 +45,7 @@ function MyChats() {
     const name = isOwn ? "You: " : `${msg?.sender.name}: `;
 
     // store for next fallback use
-    if(name == undefined) return lastSenderName;
+    if (name == undefined) return lastSenderName;
     lastSenderName = name;
 
     return name;
@@ -62,6 +62,7 @@ function MyChats() {
   const fetchChats = async () => {
     try {
       const response = await axios.get("/api/chat", { withCredentials: true });
+      console.log(response.data.result);
       dispatch(setChats(response.data.result));
     } catch (error) {
       console.error("Failed to load the chats", error);
@@ -246,12 +247,8 @@ function MyChats() {
                               flex: 1,
                             }}
                           >
-                            {chat.isGroupChat &&
-                            getDisplaySender(displayMessage) == undefined
-                              ? lastSenderName
-                              : getDisplaySender(displayMessage)}
-
-                            {console.log(getDisplaySender(displayMessage))}
+                            {chat?.isGroupChat &&
+                              getDisplaySender(displayMessage)}
 
                             {displayMessage
                               ? displayMessage.content?.length > 60
