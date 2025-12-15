@@ -292,14 +292,9 @@ const SignupForm = () => {
               size="large"
               fullWidth
               sx={{ py: 1.2, textTransform: "none", fontWeight: 600 }}
-              disabled={uploadImage}
+              disabled={uploadImage || loading}
             >
-              {uploadImage ? (
-                <CircularProgress size={24} sx={{ color: "white" }} />
-              ) : (
-                "Sign Up"
-              )}
-              {loading ? (
+              {uploadImage || loading ? (
                 <CircularProgress size={24} sx={{ color: "white" }} />
               ) : (
                 "Sign Up"

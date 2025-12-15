@@ -24,13 +24,6 @@ export const loginUser = async (req, res) => {
     const token = generateToken(user._id);
     const isProd = process.env.NODE_ENV === "production";
 
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: isProd, // REQUIRED on Render
-      sameSite: isProd ? "none" : "lax",
-      path: "/",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
 
     const safeUser = {
       id: user._id,
@@ -39,7 +32,7 @@ export const loginUser = async (req, res) => {
       image: user.image,
     };
 
-    return res.json({ message: "Login successful", user: safeUser });
+    return res.json({ message: "Login successful", user: safeUser, token });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }

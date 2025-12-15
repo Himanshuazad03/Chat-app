@@ -51,7 +51,8 @@ const LoginForm = () => {
     try {
       setLoading(true);
       const res = await api.post("/api/user/login", data);
-      dispatch(login({ user: res.data.user, token: res.data.user.token }));
+      localStorage.setItem("token", res.data.token);
+      dispatch(login({ user: res.data.user }));
       setSnack({
         open: true,
         type: "success",
