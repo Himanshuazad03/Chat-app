@@ -18,6 +18,7 @@ import BadgeItems from "../BadgeItems/BadgeItems";
 import { addChat, setSelectedChat } from "../../Store/chatSlice";
 import { uploadToCloudinary } from "../utils/UploadToCloud";
 import api from "../../api/axios";
+import { set } from "mongoose";
 
 function GroupChatModal({ children }) {
   const [groupChatName, setGroupChatName] = useState("");
@@ -33,6 +34,7 @@ function GroupChatModal({ children }) {
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
+  const [grouploading, setGroupLoading] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
   const { user } = useSelector((state) => state.auth);
   const { chats } = useSelector((state) => state.chat);
@@ -119,11 +121,13 @@ function GroupChatModal({ children }) {
       return;
     }
     try {
+      setGroupLoading(true);
       const { data } = await api.post("/api/chat/group/", {
         name: groupChatName,
         users: JSON.stringify(selectedUsers.map((u) => u._id)),
         image: groupImage,
       });
+      setGroupLoading(false);
       dispatch(addChat(data));
       setSnack({
         open: true,
@@ -248,7 +252,11 @@ function GroupChatModal({ children }) {
             onClick={handelSubmit}
             sx={{ mb: 2 }}
           >
-            Create Chat
+            {grouploading ? (
+              <CircularProgress size={24} sx={{ color: "white" }} />
+            ) : (
+              "Create Chat"
+            )}
           </Button>
           {loading && (
             <Box display="flex" justifyContent="center" mt={1}>

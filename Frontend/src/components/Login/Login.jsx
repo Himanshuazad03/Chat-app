@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { login, logout } from "../../Store/authSlice.js";
 import { useDispatch } from "react-redux";
@@ -17,12 +16,12 @@ import {
   Paper,
   Typography,
   FormHelperText,
-  Alert,
-  Snackbar,
+  CircularProgress,
 } from "@mui/material";
 import { useForm, Controller } from "react-hook-form";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import api from "../../api/axios.js";
+
 
 const LoginForm = () => {
   const navigate = useNavigate();
@@ -50,6 +49,7 @@ const LoginForm = () => {
 
   const submitHandler = async (data) => {
     try {
+      setLoading(true);
       const res = await api.post("/api/user/login", data);
       dispatch(login({ user: res.data.user, token: res.data.user.token }));
       setSnack({
@@ -57,6 +57,7 @@ const LoginForm = () => {
         type: "success",
         message: "Login Successful",
       });
+      setLoading(false);
       setTimeout(() => {
         navigate("/chat");
       }, 1000);
@@ -161,7 +162,11 @@ const LoginForm = () => {
               sx={{ py: 1.2, textTransform: "none", fontWeight: 600 }}
               disabled={loading}
             >
-              Login
+              {loading ? (
+                              <CircularProgress size={24} sx={{ color: "white" }} />
+                            ) : (
+                              "Login"
+                            )}
             </Button>
 
             {/* GUEST CREDENTIALS */}

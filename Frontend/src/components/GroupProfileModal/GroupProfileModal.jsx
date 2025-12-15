@@ -11,10 +11,10 @@ import BadgeItems from "../BadgeItems/BadgeItems";
 import { useSelector, useDispatch } from "react-redux";
 import SnakeMessage from "../SnakeMessage/SnakeMessage";
 import { useState, useMemo, useEffect } from "react";
-import axios from "axios";
 import { updateChat } from "../../Store/chatSlice";
 import debounce from "../Debouncing/Debounce";
 import UserListItems from "../Userlist/UserListItems";
+import api from "../../api/axios";
 
 function GroupProfileModal({ open, onClose, users }) {
   const { user } = useSelector((state) => state.auth);
@@ -39,7 +39,7 @@ function GroupProfileModal({ open, onClose, users }) {
             setLoading(false);
             return;
           }
-          const { data } = await axios.get(`/api/user?search=${value}`, {
+          const { data } = await api.get(`/api/user?search=${value}`, {
             withCredentials: true,
             signal: controller.signal,
           });
@@ -81,7 +81,7 @@ function GroupProfileModal({ open, onClose, users }) {
     }
     try {
       // API call to update group name
-      const { data } = await axios.put("/api/chat/rename", {
+      const { data } = await api.put("/api/chat/rename", {
         chatId: groupId,
         chatName: updatedGroupName,
       });

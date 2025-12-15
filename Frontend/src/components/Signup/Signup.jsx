@@ -18,9 +18,7 @@ import {
 } from "@mui/material";
 import { useForm, Controller } from "react-hook-form";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { Alert, Snackbar } from "@mui/material";
 import api from "../../api/axios";
 
 const SignupForm = () => {
@@ -43,6 +41,7 @@ const SignupForm = () => {
   const [showPass, setShowPass] = useState(false);
   const [uploadImage, setUploadImage] = useState(false);
   const [showConfirmPass, setShowConfirmPass] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const [snack, setSnack] = useState({
     open: false,
@@ -65,7 +64,6 @@ const SignupForm = () => {
     try {
       const url = await uploadToCloudinary(file);
 
-
       // store url in hook form
       setValue("image", url, { shouldValidate: true }); // ✅ Cloudinary image URL
     } catch (err) {
@@ -83,13 +81,14 @@ const SignupForm = () => {
 
   const submitHandler = async (data) => {
     try {
+      setLoading(true);
       const res = await api.post("/api/user/register", data);
       setSnack({
         open: true,
         type: "success",
         message: "Registration Successful",
       });
-
+      setLoading(false);
       setTimeout(() => {
         navigate("/");
       }, 1000);
@@ -296,6 +295,11 @@ const SignupForm = () => {
               disabled={uploadImage}
             >
               {uploadImage ? (
+                <CircularProgress size={24} sx={{ color: "white" }} />
+              ) : (
+                "Sign Up"
+              )}
+              {loading ? (
                 <CircularProgress size={24} sx={{ color: "white" }} />
               ) : (
                 "Sign Up"
