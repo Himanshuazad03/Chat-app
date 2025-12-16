@@ -17,9 +17,10 @@ import SideDrawer from "../Drawer/Drawer";
 import { logout } from "../../Store/authSlice.js";
 import { useDispatch } from "react-redux";
 import ForumIcon from "@mui/icons-material/Forum";
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import LogoutIcon from '@mui/icons-material/Logout';
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import LogoutIcon from "@mui/icons-material/Logout";
 import api from "../../api/axios.js";
+import logo from "../../assets/logo.png";
 
 function Header() {
   const [openDrawer, setOpenDrawer] = useState(false);
@@ -61,7 +62,8 @@ function Header() {
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
-          py: 2,
+          paddingBottom: 2,
+          paddingTop: 1,
         }}
       >
         {/* TOP SECTION */}
@@ -69,9 +71,18 @@ function Header() {
           sx={{
             display: "flex",
             flexDirection: "column",
-            gap: 3.1,
+            gap: 2,
           }}
         >
+          <Box
+            display={"flex"}
+            justifyContent={"center"}
+            alignItems={"center"}
+            padding={"5px"}
+            borderRadius={"20px"}
+          >
+            <img src={logo} alt="Logo" style={{borderRadius: "50%"}} />
+          </Box>
           {/* Search Button */}
           <Tooltip title="Search Users">
             <Box
