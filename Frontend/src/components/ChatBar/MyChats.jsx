@@ -22,7 +22,6 @@ function MyChats() {
   const dispatch = useDispatch();
 
   const getSender = (loggedUser, users) => {
-    console.log(users);
     if (!Array.isArray(users) || users.length < 2) return null;
 
     const loggedId = loggedUser.id ?? loggedUser._id;
