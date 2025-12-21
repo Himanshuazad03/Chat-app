@@ -323,7 +323,6 @@ function SingleChat() {
     return () => socket.off("messageRecieved", handler);
   }, [selectedChat]);
 
-  console.log(replyMessage?._id);
 
   const sendMessage = async () => {
     if (editMessage) {
@@ -384,7 +383,6 @@ function SingleChat() {
 
   useEffect(() => {
     socket.on("messageUpdated", (updatedMsg) => {
-      console.log(updatedMsg);
       setMessage((prev) =>
         prev.map((msg) => (msg._id === updatedMsg._id ? updatedMsg : msg))
       );
