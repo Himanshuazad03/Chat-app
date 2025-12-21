@@ -5,10 +5,9 @@ import { io } from "../index.js";
 import cloudinary from "../config/cloudinary.js";
 import multer from "multer";
 import { Readable } from "stream";
-import e from "express";
 
 export const sendMessage = async (req, res) => {
-  const { content, chatId } = req.body;
+  const { content, chatId, replyTo } = req.body;
 
   if (!content || !chatId) {
     return res
@@ -21,12 +20,20 @@ export const sendMessage = async (req, res) => {
       sender: req.user._id,
       content: content,
       chat: chatId,
+      replyTo: replyTo || null,
     };
 
+    // ❗ FIX: create first
     let newMessage = await Message.create(message);
 
+    // ❗ FIX: then populate on the document
     newMessage = await newMessage.populate("sender", "name image");
     newMessage = await newMessage.populate("chat");
+    newMessage = await newMessage.populate({
+      path: "replyTo",
+      populate: { path: "sender", select: "name image" },
+    });
+
     newMessage = await User.populate(newMessage, {
       path: "chat.users",
       select: "name image email",
@@ -35,6 +42,8 @@ export const sendMessage = async (req, res) => {
     await Chat.findByIdAndUpdate(chatId, {
       latestMessage: newMessage,
     });
+
+    io.to(chatId).emit("messageRecieved", newMessage);
 
     res.json(newMessage);
   } catch (error) {
@@ -49,7 +58,11 @@ export const allMessage = async (req, res) => {
   try {
     const message = await Message.find({ chat: req.params.chatId })
       .populate("sender", "name image email")
-      .populate("chat");
+      .populate("chat")
+      .populate({
+        path: "replyTo",
+        populate: { path: "sender", select: "name image" },
+      });
 
     res.json(message);
   } catch (error) {
@@ -88,7 +101,10 @@ export const uploadMedia = async (req, res) => {
         });
 
         newMessage = await newMessage.populate("sender", "name image");
-        newMessage = await newMessage.populate("chat");
+        newMessage = await newMessage.populate("chat").populate({
+          path: "replyTo",
+          populate: { path: "sender", select: "name image" },
+        });
 
         newMessage = await User.populate(newMessage, {
           path: "chat.users",
@@ -111,5 +127,154 @@ export const uploadMedia = async (req, res) => {
     return res.status(500).json({
       message: error.message,
     });
+  }
+};
+
+export const editMessage = async (req, res) => {
+  try {
+    const { chatId, content } = req.body;
+    const messageId = req.params.messageId;
+
+    if (!content || content.trim() === "") {
+      return res.status(400).json({ message: "Content cannot be empty" });
+    }
+
+    const message = await Message.findById(messageId).populate("chat");
+
+    if (!message) {
+      return res.status(404).json({ message: "Message not found" });
+    }
+
+    // Make sure user can only edit their own message
+    if (message.sender.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "Not allowed" });
+    }
+
+    message.content = content;
+    message.isEdited = true;
+    message.updatedAt = new Date();
+
+    const updatedMsg = await message.save();
+    const chat = await Chat.findById(chatId).select("latestMessage");
+    if (chat.latestMessage?._id.toString() === messageId.toString()) {
+      // update latestMessage because we edited the latest one
+      await Chat.findByIdAndUpdate(chatId, {
+        latestMessage: updatedMsg,
+      });
+    }
+
+    let populatedMsg = await Message.findById(updatedMsg._id)
+      .populate("sender", "name image _id")
+      .populate("chat")
+      .populate({
+        path: "replyTo",
+        populate: { path: "sender", select: "name image" },
+      });
+
+    populatedMsg = await User.populate(populatedMsg, {
+      path: "chat.users",
+      select: "name image email",
+    });
+
+    io.to(chatId).emit("messageUpdated", populatedMsg);
+    if (chat.latestMessage?._id.toString() === messageId.toString()) {
+      io.to(chatId).emit("messageRecieved", populatedMsg);
+    }
+
+    res.json(populatedMsg);
+  } catch (error) {
+    return res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
+export const deleteMessage = async (req, res) => {
+  try {
+    const { chatId } = req.body;
+    const messageId = req.params.messageId;
+
+    const message = await Message.findById(messageId).populate("chat");
+
+    if (!message) {
+      return res.status(404).json({ message: "Message not found" });
+    }
+
+    if (message.sender.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "Not allowed" });
+    }
+
+    message.content = "This message was deleted";
+    message.isDeleted = true;
+    message.mediaUrl = null;
+    message.isImage = false;
+    message.isVideo = false;
+
+    const updatedMsg = await message.save();
+    const chat = await Chat.findById(chatId).select("latestMessage");
+
+    if (chat.latestMessage?._id.toString() === messageId.toString()) {
+      // update latestMessage because we edited the latest one
+      await Chat.findByIdAndUpdate(chatId, {
+        latestMessage: updatedMsg,
+      });
+    }
+
+    let populatedMsg = await Message.findById(updatedMsg._id)
+      .populate("sender", "name image _id")
+      .populate("chat")
+      .populate({
+        path: "replyTo",
+        populate: { path: "sender", select: "name image" },
+      });
+
+    populatedMsg = await User.populate(populatedMsg, {
+      path: "chat.users",
+      select: "name image email",
+    });
+
+    io.to(chatId).emit("messageUpdated", populatedMsg);
+    if (chat.latestMessage?._id.toString() === messageId.toString()) {
+      io.to(chatId).emit("messageRecieved", populatedMsg);
+    }
+
+    res.json(populatedMsg);
+  } catch (error) {
+    return res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
+export const forwardMessage = async (req, res) => {
+  try {
+    const { chatId, content, mediaUrl, isImage, isVideo, forwardedFrom } =
+      req.body;
+
+    let newMessage = await Message.create({
+      sender: req.user._id,
+      content: content || "",
+      chat: chatId,
+      mediaUrl: mediaUrl || null,
+      isImage: isImage || false,
+      isVideo: isVideo || false,
+      forwardedFrom, // userId
+    });
+
+    newMessage = await Message.findById(newMessage._id)
+      .populate("sender", "name image")
+      .populate({
+        path: "chat",
+        populate: { path: "users", select: "name image email" },
+      })
+      .populate("forwardedFrom", "name image"); // this is the FIX
+
+    await Chat.findByIdAndUpdate(chatId, { latestMessage: newMessage });
+
+    io.to(chatId).emit("messageRecieved", newMessage);
+
+    res.json(newMessage);
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
   }
 };

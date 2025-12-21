@@ -11,10 +11,22 @@ const messageModel = mongoose.Schema(
       enum: ["sent", "delivered", "seen"],
       default: "sent",
     },
+    isEdited: { type: Boolean, default: false },
+    isDeleted: { type: Boolean, default: false },
     mediaUrl: { type: String, default: null },
     publicId: { type: String, default: null },
     isImage: { type: Boolean, default: false },
     isVideo: { type: Boolean, default: false },
+    replyTo: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Message",
+      default: null,
+    },
+    forwardedFrom: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
   },
   {
     timestamps: true,

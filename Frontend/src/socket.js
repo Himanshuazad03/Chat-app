@@ -8,4 +8,6 @@ const socket = io(SOCKET_URL, {
   autoConnect: false, // IMPORTANT
 });
 
+
+
 export default socket;

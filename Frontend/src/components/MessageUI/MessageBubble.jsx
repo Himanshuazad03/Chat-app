@@ -5,9 +5,15 @@ import DoneIcon from "@mui/icons-material/Done";
 import DoneAllIcon from "@mui/icons-material/DoneAll";
 import CircularProgress from "@mui/material/CircularProgress";
 
-function MessageBubble({ msg, isOwn, onMediaClick }) {
+function MessageBubble({ msg, isOwn, onMediaClick, onRightClick }) {
   const { selectedChat } = useSelector((state) => state.chat);
+  const { user } = useSelector((state) => state.auth);
   const time = new Date(msg.createdAt).toLocaleTimeString("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  const updatedTime = new Date(msg.updatedAt).toLocaleTimeString("en-GB", {
     hour: "2-digit",
     minute: "2-digit",
   });
@@ -27,6 +33,8 @@ function MessageBubble({ msg, isOwn, onMediaClick }) {
           alt={msg.sender.name}
         />
       )}
+
+      {/* ... existing bubble code ... */}
 
       <Box
         sx={{
@@ -59,6 +67,11 @@ function MessageBubble({ msg, isOwn, onMediaClick }) {
           },
         }}
       >
+        {msg.forwardedFrom && !msg.isDeleted && (
+          <Typography sx={{ fontSize: "11px", color: "gray" }}>
+            Forwarded
+          </Typography>
+        )}
         {/* Group sender name */}
         {!isOwn && selectedChat?.isGroupChat && (
           <Typography
@@ -191,24 +204,77 @@ function MessageBubble({ msg, isOwn, onMediaClick }) {
         {/* --------------------- */}
         {/* TEXT MESSAGE STYLE   */}
         {/* --------------------- */}
-        {!msg.isImage && !msg.isVideo && (
-          <Box sx={{ display: "flex", alignItems: "flex-end", gap: 0.7 }}>
-            <Typography sx={{ fontSize: "15px" }}>{msg.content}</Typography>
 
-            {/* Inline time */}
-            <Typography
-              variant="caption"
-              sx={{
-                opacity: 0.6,
-                fontSize: "11px",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {time}
+        {msg.replyTo && !msg.isDeleted && (
+          <Box
+            sx={{
+              background: isOwn ? "#F0F2F5" : "#F0F0F0",
+              borderLeft: "3px solid #4CAF50",
+              padding: "6px 8px",
+              borderRadius: "6px",
+              marginBottom: "6px",
+              cursor: "pointer",
+            }}
+          >
+            <Typography sx={{ fontSize: "12px", fontWeight: 600 }}>
+              {msg?.replyTo?.sender?._id === user?.id
+                ? "You"
+                : msg?.replyTo.sender?.name}
             </Typography>
 
+            <Typography sx={{ fontSize: "13px", color: "#555" }}>
+              {msg?.replyTo.content?.length > 40
+                ? msg?.replyTo.content.slice(0, 40) + "..."
+                : msg?.replyTo.content}
+            </Typography>
+          </Box>
+        )}
+        {!msg.isImage && !msg.isVideo && (
+          <Box
+            sx={{ display: "flex", alignItems: "flex-end", gap: 0.7 }}
+            onContextMenu={(e) => {
+              e.stopPropagation(); // prevent parent triggers
+              onRightClick(e, msg);
+            }}
+          >
+            <Typography
+              sx={{ fontSize: "15px", color: msg.isDeleted ? "gray" : "black" }}
+            >
+              {msg.content}
+            </Typography>
+
+            {/* Inline time */}
+            {!msg.isDeleted && (
+              <Typography
+                variant="caption"
+                sx={{
+                  opacity: 0.6,
+                  fontSize: "11px",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {msg.isEdited ? updatedTime : time}
+              </Typography>
+            )}
+
             {/* Inline ticks */}
-            {isOwn && <StatusTick status={msg.status} />}
+            {!msg.isDeleted && (
+              <>
+                {isOwn && <StatusTick status={msg.status} />}
+                {msg.isEdited && (
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      opacity: 0.6,
+                      fontSize: "11px",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Edited
+                  </Typography>
+                )}
+              </>
+            )}
           </Box>
         )}
       </Box>

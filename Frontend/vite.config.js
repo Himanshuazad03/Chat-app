@@ -9,7 +9,7 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": {
-        target: "https://chat-app-4n2g.onrender.com",
+        target: "http://localhost:4000",
         changeOrigin: true,
         secure: false,
       },

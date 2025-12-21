@@ -20,14 +20,16 @@ if (process.env.NODE_ENV === "production") {
 
 app.use(
   cors({
-    origin: "https://chat-app-eight-beryl-59.vercel.app",
+    origin: [
+      "http://localhost:5173",
+      "https://chat-app-eight-beryl-59.vercel.app",
+    ],
     credentials: true,
   })
 );
 
 app.use(cookieParser());
 app.use(express.json());
-
 
 connectDB();
 
@@ -40,7 +42,10 @@ const PORT = process.env.PORT;
 const io = new Server(server, {
   pingTimeout: 1200000,
   cors: {
-    origin: "https://chat-app-eight-beryl-59.vercel.app",
+    origin: [
+      "http://localhost:5173",
+      "https://chat-app-eight-beryl-59.vercel.app",
+    ],
     credentials: true,
   },
 });
@@ -49,7 +54,6 @@ export { io };
 
 // 3️⃣ Socket.io events
 io.on("connection", (socket) => {
-
   socket.on("setup", (userData) => {
     socket.join(userData.id);
     socket.emit("connected");
@@ -87,8 +91,6 @@ io.on("connection", (socket) => {
       { status: "seen" }
     );
 
-
-
     // 2. Get chat users
     const chat = await Message.findOne({ chat: chatId })
       .populate("chat")
@@ -107,7 +109,7 @@ io.on("connection", (socket) => {
       }
     });
   });
-  
+
   socket.off("setup", () => {
     console.log("USER DISCONNECTED");
     socket.leave(userData.id);

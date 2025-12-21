@@ -3,7 +3,7 @@ import store from "../Store/store";
 import {logout} from "../Store/authSlice"
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL
+  baseURL: import.meta.env.VITE_API_URL || "https://chat-app-4n2g.onrender.com",
 });
 
 

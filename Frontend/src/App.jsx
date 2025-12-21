@@ -12,6 +12,8 @@ import PublicRoute from "./components/Protected/Public.js";
 
 function App() {
   return (
+    <>
+   
     <BrowserRouter>
       <Routes>
         <Route
@@ -40,6 +42,7 @@ function App() {
         />
       </Routes>
     </BrowserRouter>
+     </>
   );
 }
 

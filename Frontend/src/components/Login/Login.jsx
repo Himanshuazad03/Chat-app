@@ -21,6 +21,7 @@ import {
 import { useForm, Controller } from "react-hook-form";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import api from "../../api/axios.js";
+import toast from "react-hot-toast";
 
 
 const LoginForm = () => {
@@ -53,22 +54,12 @@ const LoginForm = () => {
       const res = await api.post("/api/user/login", data);
       localStorage.setItem("token", res.data.token);
       dispatch(login({ user: res.data.user }));
-      setSnack({
-        open: true,
-        type: "success",
-        message: "Login Successful",
-      });
+     toast.success("Login successful");
       setLoading(false);
-      setTimeout(() => {
-        navigate("/chat");
-      }, 1000);
+      navigate("/chat");
     } catch (error) {
       console.log("error", error.response.data.message);
-      setSnack({
-        open: true,
-        type: "error",
-        message: error.response.data.message,
-      });
+      toast.error(error.response.data.message);
     }
   };
 

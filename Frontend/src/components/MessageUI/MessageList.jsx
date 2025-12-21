@@ -1,12 +1,13 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Box } from "@mui/material";
 import MessageBubble from "./MessageBubble";
 import MessageDate from "./MessageDate";
 import formatDate from "./formateDate.js";
 import SystemMessage from "./SystemMessage.jsx";
 
-function MessageList({ messages, currentUserId, onMediaClick }) {
+function MessageList({ messages, currentUserId, onMediaClick, onRightClick }) {
   const bottomRef = useRef(null);
+
 
   // Auto-scroll every time messages change
   useEffect(() => {
@@ -32,6 +33,7 @@ function MessageList({ messages, currentUserId, onMediaClick }) {
                 msg={msg}
                 isOwn={msg?.sender?._id === currentUserId}
                 onMediaClick={onMediaClick}
+                onRightClick={onRightClick}
               />
             )}
           </React.Fragment>

@@ -20,6 +20,7 @@ import { useForm, Controller } from "react-hook-form";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/axios";
+import toast from "react-hot-toast";
 
 const SignupForm = () => {
   const {
@@ -83,22 +84,12 @@ const SignupForm = () => {
     try {
       setLoading(true);
       const res = await api.post("/api/user/register", data);
-      setSnack({
-        open: true,
-        type: "success",
-        message: "Registration Successful",
-      });
+      toast.success("Registration successful");
       setLoading(false);
-      setTimeout(() => {
-        navigate("/");
-      }, 1000);
+      navigate("/");
     } catch (error) {
       console.log("error", error.message);
-      setSnack({
-        open: true,
-        type: "error",
-        message: error.response.data.message,
-      });
+      toast.error(error.response.data.message); 
     }
   };
 

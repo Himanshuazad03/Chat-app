@@ -20,8 +20,6 @@ function SideDrawer({ open, onClose }) {
   const [searchTerm, setSearchTerm] = React.useState("");
   const [AllUsers, setAllUsers] = React.useState([]);
   const [loadingChat, setLoadingChat] = React.useState(false);
-  const { chats } = useSelector((state) => state.chat);
-
 
   const dispatch = useDispatch();
 
@@ -29,9 +27,11 @@ function SideDrawer({ open, onClose }) {
     () =>
       debounce(async (value, controller) => {
         try {
+          setLoadingChat(true);
           const res = await api.get(`/api/user?search=${value}`, {
             signal: controller.signal,
           });
+          setLoadingChat(false);
           setAllUsers(res.data.users);
         } catch (error) {
           if (axios.isCancel(error)) {
@@ -63,9 +63,11 @@ function SideDrawer({ open, onClose }) {
       dispatch(setSelectedChat(data));
       setLoadingChat(false);
       onClose();
-      
     } catch (error) {
       console.error("Error accessing/creating chat:", error);
+    }
+    finally {
+      setLoadingChat(false);
     }
   };
 
@@ -94,22 +96,30 @@ function SideDrawer({ open, onClose }) {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
           {/* Search Results */}
-          {AllUsers.length > 0 ? (
-          <Box mt={2}>
-            {AllUsers.map((user) => (
-              <UserListItems
-                key={user._id}
-                user={user}
-                onClose={onClose}
-                handleFunction={() => accessChat(user._id)}
-                clearSearch={() => setSearchTerm("")}
-              />
-            ))}
-          </Box>
+          {loadingChat ? (
+            <Box display="flex" justifyContent="center" mt={2}>
+              <CircularProgress />
+            </Box>
           ) : (
-            <Typography mt={2} color="textSecondary">
-              No users found.
-            </Typography>
+            <>
+              {AllUsers.length > 0 ? (
+                <Box mt={2}>
+                  {AllUsers.map((user) => (
+                    <UserListItems
+                      key={user._id}
+                      user={user}
+                      onClose={onClose}
+                      handleFunction={() => accessChat(user._id)}
+                      clearSearch={() => setSearchTerm("")}
+                    />
+                  ))}
+                </Box>
+              ) : (
+                <Typography mt={2} color="textSecondary">
+                  No users found.
+                </Typography>
+              )}
+            </>
           )}
         </Box>
       </Drawer>

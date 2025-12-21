@@ -8,7 +8,11 @@ import {
   InputAdornment,
   Avatar,
   CircularProgress,
+  Menu,
+  MenuItem,
 } from "@mui/material";
+import { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 import { useSelector, useDispatch } from "react-redux";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import AccountBoxIcon from "@mui/icons-material/AccountBox";
@@ -29,7 +33,7 @@ import AttachFileIcon from "@mui/icons-material/AttachFile";
 import ImagePreviewModal from "../ImagePreviewModal/ImagePreviewModal";
 import api from "../../api/axios";
 import socket from "../../socket";
-import { set } from "mongoose";
+import ForwardModal from "../ForwardModal/ForwardModal";
 
 let selectedChatCompare;
 
@@ -39,6 +43,28 @@ function SingleChat() {
     message: "",
     type: "success",
   });
+
+  const [contextMenu, setContextMenu] = useState({
+    mouseX: null,
+    mouseY: null,
+    message: null,
+    open: false,
+  });
+
+  const handleRightClick = (event, msg) => {
+    event.preventDefault();
+
+    setContextMenu({
+      mouseX: event.clientX - 30,
+      mouseY: event.clientY - 100,
+      message: msg,
+      open: true,
+    });
+  };
+
+  const handleCloseContext = () => {
+    setContextMenu({ ...contextMenu, open: false });
+  };
 
   const defaultOptions = {
     loop: true,
@@ -53,6 +79,7 @@ function SingleChat() {
   );
   const { user } = useSelector((state) => state.auth);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [replyMessage, setReplyMessage] = useState(null);
   const [groupProfileOpen, setGroupProfileOpen] = useState(false);
   const [socketConnected, setSocketConnected] = useState(false);
   const [message, setMessage] = useState([]);
@@ -65,9 +92,23 @@ function SingleChat() {
   const [previewImage, setPreviewImage] = useState(null);
   const [disable, setDisable] = useState(false);
   const [sending, setSending] = useState(false);
+  const [editMessage, setEditMessage] = useState(null);
+  const [forwardMessage, setForwardMessage] = useState(null);
+  const [openForwardModal, setOpenForwardModal] = useState(false);
+
   const dispatch = useDispatch();
 
   const fileInputRef = useRef();
+
+  const canEditMessage = (msg) => {
+    if (!msg) return false;
+
+    const messageTime = new Date(msg.createdAt).getTime();
+    const now = Date.now();
+
+    const diffMinutes = (now - messageTime) / (1000 * 60);
+    return diffMinutes <= 20;
+  };
 
   const handelMediaSelect = (e) => {
     const file = e.target.files[0];
@@ -79,6 +120,23 @@ function SingleChat() {
       isVideo: file.type.startsWith("video"),
     });
     e.target.value = "";
+  };
+
+  const handleDeleteMessage = async (message) => {
+    try {
+      await toast.promise(
+        api.delete(`/api/message/${message._id}`, {
+          data: { chatId: selectedChat._id },
+        }),
+        {
+          loading: "Deleting message",
+          success: "Message deleted successfully",
+          error: "Failed to delete message",
+        }
+      );
+    } catch (error) {
+      console.log("Failed to delete Message", error);
+    }
   };
 
   const handelMediaUpload = async () => {
@@ -247,7 +305,10 @@ function SingleChat() {
       );
 
       // Notifications (only for real messages)
-      if (!selectedChatCompare || selectedChatCompare._id !== updatedChat._id) {
+      if (
+        (!selectedChatCompare || selectedChatCompare._id !== updatedChat._id) &&
+        msg.sender._id !== user.id
+      ) {
         if (!isSystem) {
           dispatch(setNotification(msg));
         }
@@ -262,14 +323,37 @@ function SingleChat() {
     return () => socket.off("messageRecieved", handler);
   }, [selectedChat]);
 
+  console.log(replyMessage?._id);
+
   const sendMessage = async () => {
-    if (newMessage) {
+    if (editMessage) {
+      try {
+        await toast.promise(
+          api.put(`/api/message/${editMessage._id}`, {
+            content: editMessage.content,
+            chatId: selectedChat._id,
+          }),
+          {
+            loading: "Updating message",
+            success: "Message updated successfully",
+            error: "Failed to update message",
+          }
+        );
+        setEditMessage(null);
+        setNewMessage("");
+        socket.emit("messageEdited", editMessage);
+      } catch (error) {
+        console.error("Failed to update message", error);
+      }
+    }
+    if (newMessage && !editMessage) {
       socket.emit("stopTyping", selectedChat._id);
       try {
         setSending(true);
         const { data } = await api.post("/api/message", {
           content: newMessage,
           chatId: selectedChat._id,
+          replyTo: replyMessage ? replyMessage._id : null,
         });
         socket.emit("newMessage", data);
         setMessage((prev) => [...(prev || []), data]);
@@ -280,6 +364,7 @@ function SingleChat() {
           })
         );
         setSending(false);
+        setReplyMessage(null);
         setNewMessage("");
       } catch (error) {
         console.error("Failed to send message", error);
@@ -295,6 +380,17 @@ function SingleChat() {
     });
 
     return () => socket.off("groupUpdated");
+  }, []);
+
+  useEffect(() => {
+    socket.on("messageUpdated", (updatedMsg) => {
+      console.log(updatedMsg);
+      setMessage((prev) =>
+        prev.map((msg) => (msg._id === updatedMsg._id ? updatedMsg : msg))
+      );
+    });
+
+    return () => socket.off("messageUpdated");
   }, []);
 
   useEffect(() => {
@@ -334,6 +430,9 @@ function SingleChat() {
   }, []);
 
   const typingHandler = (e) => {
+    if (editMessage) {
+      setEditMessage({ ...editMessage, content: e.target.value });
+    }
     setNewMessage(e.target.value);
     if (!typing) {
       setTyping(true);
@@ -528,6 +627,7 @@ function SingleChat() {
                   onMediaClick={(mediaUrl) => {
                     setPreviewImage(mediaUrl);
                   }}
+                  onRightClick={handleRightClick}
                 />
               )}
             </Box>
@@ -549,6 +649,39 @@ function SingleChat() {
               </div>
             )}
 
+            {replyMessage && (
+              <Box sx={{ padding: "2px 10px" }}>
+                <Box
+                  sx={{
+                    padding: "6px 20px",
+                    background: "#F1F3F4",
+                    borderLeft: "4px solid #4CAF50",
+                    marginBottom: "5px",
+                    borderRadius: "6px",
+                    display: "flex",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <Box>
+                    <Typography fontWeight={600}>
+                      {replyMessage.sender._id === user.id
+                        ? "You"
+                        : replyMessage.sender.name}
+                    </Typography>
+                    <Typography fontSize="14px" color="gray">
+                      {replyMessage.content}
+                    </Typography>
+                  </Box>
+                  <IconButton
+                    size="small"
+                    onClick={() => setReplyMessage(null)}
+                  >
+                    <CloseIcon />
+                  </IconButton>
+                </Box>
+              </Box>
+            )}
+
             {sending && (
               <Box
                 display="flex"
@@ -565,7 +698,7 @@ function SingleChat() {
               <TextField
                 placeholder="Enter Message"
                 variant="filled"
-                value={newMessage}
+                value={editMessage ? editMessage.content : newMessage}
                 onChange={typingHandler}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !sending) {
@@ -600,7 +733,7 @@ function SingleChat() {
 
                       {/* Send Message */}
                       <IconButton
-                      disabled = {sending}
+                        disabled={sending}
                         onClick={() => {
                           if (draftMedia && !sending) {
                             handelMediaUpload();
@@ -650,7 +783,7 @@ function SingleChat() {
         onClose={() => setProfileOpen(false)}
         user={
           selectedChat
-            ? selectedChat.users.find((u) => u._id !== user.id)
+            ? selectedChat?.users?.find((u) => u._id !== user.id)
             : null
         }
       />
@@ -670,6 +803,69 @@ function SingleChat() {
         type={snack.type}
         onClose={() => setSnack((s) => ({ ...s, open: false }))}
       />
+
+      <ForwardModal
+        open={openForwardModal}
+        onClose={() => setOpenForwardModal(false)}
+        message={forwardMessage}
+      />
+
+      <Menu
+        open={contextMenu.open}
+        onClose={handleCloseContext}
+        anchorReference="anchorPosition"
+        anchorPosition={
+          contextMenu.open
+            ? { top: contextMenu.mouseY, left: contextMenu.mouseX }
+            : undefined
+        }
+      >
+        {/* EDIT */}
+        {contextMenu?.message?.sender._id === user.id && (
+          <>
+            <MenuItem
+              disabled={!canEditMessage(contextMenu.message)}
+              onClick={() => {
+                if (canEditMessage(contextMenu.message)) {
+                  setEditMessage(contextMenu.message);
+                  handleCloseContext();
+                }
+              }}
+            >
+              Edit
+            </MenuItem>
+
+            {/* DELETE */}
+            <MenuItem
+              onClick={() => {
+                handleDeleteMessage(contextMenu.message);
+                handleCloseContext();
+              }}
+            >
+              Delete
+            </MenuItem>
+          </>
+        )}
+        <MenuItem
+          onClick={() => {
+            setForwardMessage(contextMenu.message);
+            setOpenForwardModal(true);
+            handleCloseContext();
+          }}
+        >
+          Forward
+        </MenuItem>
+
+        <MenuItem
+          onClick={() => {
+            setReplyMessage(contextMenu.message);
+            handleCloseContext();
+          }}
+        >
+          Reply
+        </MenuItem>
+      </Menu>
+      <Toaster position="top-center" />
     </>
   );
 }

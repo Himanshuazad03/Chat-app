@@ -11,16 +11,18 @@ import {
 } from "../../Store/chatSlice";
 import GroupChatModal from "../GroupChatModal/GroupChatModal";
 import api from "../../api/axios";
+import SkeletonChatList from "../chatSkeletonItems/chatSkeletonList";
 
 function MyChats() {
   const { user } = useSelector((state) => state.auth);
-  console.log(user)
+  const [loading, setLoading] = useState(false);
   const { selectedChat, chats, notifications } = useSelector(
     (state) => state.chat
   );
   const dispatch = useDispatch();
 
   const getSender = (loggedUser, users) => {
+    console.log(users);
     if (!Array.isArray(users) || users.length < 2) return null;
 
     const loggedId = loggedUser.id ?? loggedUser._id;
@@ -36,10 +38,10 @@ function MyChats() {
   const getDisplaySender = (msg) => {
     if (!msg || msg.isSystemMessage) return "";
 
-  if (!msg.sender || typeof msg.sender === "string") return "";
+    if (!msg.sender || typeof msg.sender === "string") return "";
 
-  const isOwn = msg?.sender._id === user?.id;
-  return isOwn ? "You: " : `${msg.sender.name}: `;
+    const isOwn = msg?.sender._id === user?.id;
+    return isOwn ? "You: " : `${msg.sender.name}: `;
   };
 
   // Get latest notification for a chat
@@ -52,7 +54,9 @@ function MyChats() {
 
   const fetchChats = async () => {
     try {
+      setLoading(true);
       const response = await api.get("/api/chat");
+      setLoading(false);
       dispatch(setChats(response.data.result));
     } catch (error) {
       console.error("Failed to load the chats", error);
@@ -137,150 +141,156 @@ function MyChats() {
             },
           }}
         >
-          {chats.length > 0 ? (
-            <Stack spacing={0.5}>
-              {chats.map((chat) => {
-                const isSelected = selectedChat?._id === chat._id;
-                const unreadCount = getUnreadCount(chat._id);
-                const latestNotification = getLatestNotification(chat._id);
+          {loading ? (
+            <SkeletonChatList />
+          ) : (
+            <>
+              {chats.length > 0 ? (
+                <Stack spacing={0.5}>
+                  {chats.map((chat) => {
+                    const isSelected = selectedChat?._id === chat._id;
+                    const unreadCount = getUnreadCount(chat._id);
+                    const latestNotification = getLatestNotification(chat._id);
 
-                // Determine what message to display
-                const displayMessage = latestNotification || chat.latestMessage;
+                    // Determine what message to display
+                    const displayMessage =
+                      latestNotification || chat.latestMessage;
 
-                return (
-                  <Box
-                    key={chat._id}
-                    onClick={() => {
-                      dispatch(setSelectedChat(chat));
-                      dispatch(clearNotifications(chat._id));
-                    }}
-                    sx={{
-                      cursor: "pointer",
-                      p: 1.65,
-                      borderRadius: "8px",
-                      backgroundColor: isSelected ? "#d6d7db" : "#F7F7F7",
-                      transition: "0.2s ease",
-                      "&:hover": {
-                        backgroundColor: isSelected ? "none" : "#eaeaec",
-                      },
-                    }}
-                  >
-                    <Stack direction="row" spacing={2} alignItems="center">
-                      {/* Avatar Placeholder */}
-                      <Avatar
-                        src={
-                          chat?.isGroupChat
-                            ? chat?.image
-                            : getSender(user, chat.users)?.image
-                        }
-                        sx={{
-                          width: 42,
-                          height: 42,
-                          border: "2px solid rgba(255,255,255,0.7)",
+                    return (
+                      <Box
+                        key={chat._id}
+                        onClick={() => {
+                          dispatch(setSelectedChat(chat));
+                          dispatch(clearNotifications(chat._id));
                         }}
-                      />
-
-                      <Box sx={{ flex: 1, minWidth: 0 }}>
-                        {/* Name + Time */}
-                        <Stack
-                          direction="row"
-                          justifyContent="space-between"
-                          alignItems="center"
-                        >
-                          <Typography
-                            fontWeight={unreadCount > 0 ? 700 : 600}
-                            fontSize="16px"
+                        sx={{
+                          cursor: "pointer",
+                          p: 1.65,
+                          borderRadius: "8px",
+                          backgroundColor: isSelected ? "#d6d7db" : "#F7F7F7",
+                          transition: "0.2s ease",
+                          "&:hover": {
+                            backgroundColor: isSelected ? "none" : "#eaeaec",
+                          },
+                        }}
+                      >
+                        <Stack direction="row" spacing={2} alignItems="center">
+                          {/* Avatar Placeholder */}
+                          <Avatar
+                            src={
+                              chat?.isGroupChat
+                                ? chat?.image
+                                : getSender(user, chat.users)?.image
+                            }
                             sx={{
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              whiteSpace: "nowrap",
+                              width: 42,
+                              height: 42,
+                              border: "2px solid rgba(255,255,255,0.7)",
                             }}
-                          >
-                            {!chat.isGroupChat
-                              ? getSender(user, chat.users)?.name
-                              : chat.chatName}
-                          </Typography>
+                          />
 
-                          <Typography
-                            fontSize="12px"
-                            color={unreadCount > 0 ? "#25D366" : "#777"}
-                            fontWeight={unreadCount > 0 ? 460 : 300}
-                            sx={{ whiteSpace: "nowrap", ml: 1 }}
-                          >
-                            {displayMessage
-                              ? new Date(
-                                  displayMessage?.createdAt
-                                ).toLocaleTimeString("en-GB", {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                })
-                              : ""}
-                          </Typography>
-                        </Stack>
-
-                        {/* Last message preview + Unread badge */}
-                        <Stack
-                          direction="row"
-                          alignItems="center"
-                          justifyContent="space-between"
-                          spacing={1}
-                        >
-                          <Typography
-                            fontSize="14px"
-                            color={unreadCount > 0 ? "#000" : "#666"}
-                            fontWeight={unreadCount > 0 ? 460 : 300}
-                            mt={0.5}
-                            sx={{
-                              whiteSpace: "nowrap",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              flex: 1,
-                            }}
-                          >
-                            
-                            {chat?.isGroupChat &&
-                              getDisplaySender(displayMessage)}
-
-                            {displayMessage
-                              ? displayMessage.content?.length > 60
-                                ? displayMessage.content?.substring(0, 60) +
-                                  "..."
-                                : displayMessage?.content
-                              : "Start the conversation..."}
-                          </Typography>
-
-                          {/* Unread Count Badge */}
-                          {unreadCount > 0 && (
-                            <Box
-                              sx={{
-                                minWidth: "22px",
-                                height: "22px",
-                                borderRadius: "50%",
-                                backgroundColor: "#25D366",
-                                color: "#fff",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                fontSize: "12px",
-                                fontWeight: 700,
-                                px: unreadCount > 9 ? 0.7 : 0,
-                                flexShrink: 0,
-                              }}
+                          <Box sx={{ flex: 1, minWidth: 0 }}>
+                            {/* Name + Time */}
+                            <Stack
+                              direction="row"
+                              justifyContent="space-between"
+                              alignItems="center"
                             >
-                              {unreadCount > 99 ? "99+" : unreadCount}
-                            </Box>
-                          )}
+                              <Typography
+                                fontWeight={unreadCount > 0 ? 700 : 600}
+                                fontSize="16px"
+                                sx={{
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
+                                {!chat.isGroupChat
+                                  ? getSender(user, chat.users)?.name
+                                  : chat.chatName}
+                              </Typography>
+
+                              <Typography
+                                fontSize="12px"
+                                color={unreadCount > 0 ? "#25D366" : "#777"}
+                                fontWeight={unreadCount > 0 ? 460 : 300}
+                                sx={{ whiteSpace: "nowrap", ml: 1 }}
+                              >
+                                {displayMessage
+                                  ? new Date(
+                                      displayMessage?.createdAt
+                                    ).toLocaleTimeString("en-GB", {
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    })
+                                  : ""}
+                              </Typography>
+                            </Stack>
+
+                            {/* Last message preview + Unread badge */}
+                            <Stack
+                              direction="row"
+                              alignItems="center"
+                              justifyContent="space-between"
+                              spacing={1}
+                            >
+                              <Typography
+                                fontSize="14px"
+                                color={unreadCount > 0 ? "#000" : "#666"}
+                                fontWeight={unreadCount > 0 ? 460 : 300}
+                                mt={0.5}
+                                sx={{
+                                  whiteSpace: "nowrap",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  flex: 1,
+                                }}
+                              >
+                                {chat?.isGroupChat &&
+                                  getDisplaySender(displayMessage)}
+
+                                {displayMessage
+                                  ? displayMessage.content?.length > 60
+                                    ? displayMessage.content?.substring(0, 60) +
+                                      "..."
+                                    : displayMessage?.content
+                                  : "Start the conversation..."}
+                              </Typography>
+
+                              {/* Unread Count Badge */}
+                              {unreadCount > 0 && (
+                                <Box
+                                  sx={{
+                                    minWidth: "22px",
+                                    height: "22px",
+                                    borderRadius: "50%",
+                                    backgroundColor: "#25D366",
+                                    color: "#fff",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    fontSize: "12px",
+                                    fontWeight: 700,
+                                    px: unreadCount > 9 ? 0.7 : 0,
+                                    flexShrink: 0,
+                                  }}
+                                >
+                                  {unreadCount > 99 ? "99+" : unreadCount}
+                                </Box>
+                              )}
+                            </Stack>
+                          </Box>
                         </Stack>
                       </Box>
-                    </Stack>
-                  </Box>
-                );
-              })}
-            </Stack>
-          ) : (
-            <Typography p={3} textAlign="center" color="gray">
-              No chats found
-            </Typography>
+                    );
+                  })}
+                </Stack>
+              ) : (
+                <Typography p={3} textAlign="center" color="gray">
+                  No chats found
+                </Typography>
+              )}
+            </>
           )}
         </Box>
       </Box>
