@@ -14,7 +14,7 @@ import {
 import { useSelector, useDispatch } from "react-redux";
 import api from "../../api/axios";
 import socket from "../../socket";
-import { setSelectedChat, updateChat } from "../../Store/chatSlice";
+import { updateChat, setSelectedChat } from "../../Store/chatSlice";
 import toast from "react-hot-toast";
 
 const ForwardModal = ({ open, onClose, message }) => {
@@ -64,15 +64,19 @@ const ForwardModal = ({ open, onClose, message }) => {
       payload.chatId = chatId;
 
       try {
-        const { data } = toast.promise(
-          api.post("/api/message", payload),
+        const data = await toast.promise(
+          api.post("/api/message/forward", payload).then((res) => res.data),
           {
             loading: "Forwarding message...",
             success: "Message forwarded successfully",
             error: "Failed to forward message",
           }
         );
-        dispatch(setSelectedChat(data.chat));
+
+        {
+          setSelectedChats.length == 1 && dispatch(setSelectedChat(data.chat));
+        }
+
         dispatch(
           updateChat({
             ...data.chat,

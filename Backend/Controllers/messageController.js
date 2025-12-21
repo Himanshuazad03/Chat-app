@@ -267,11 +267,15 @@ export const forwardMessage = async (req, res) => {
         path: "chat",
         populate: { path: "users", select: "name image email" },
       })
-      .populate("forwardedFrom", "name image"); // this is the FIX
+      .populate({
+        path: "forwardedFrom",
+        select: "name image email _id",
+      }); // this is the FIX
 
     await Chat.findByIdAndUpdate(chatId, { latestMessage: newMessage });
 
     io.to(chatId).emit("messageRecieved", newMessage);
+
 
     res.json(newMessage);
   } catch (error) {
